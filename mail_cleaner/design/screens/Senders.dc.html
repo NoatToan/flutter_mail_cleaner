@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Người gửi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0A66D6}a:hover{color:#084FA8}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F2F7; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; color: #000; position: relative; overflow: hidden">
+
+  <div style="position: absolute; top: 54px; left: 0; right: 0; height: 44px; display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; box-sizing: border-box">
+    <a href="SwipeReview.dc.html" style="height: 44px; padding: 0 8px; display: flex; align-items: center; text-decoration: none; color: #0A66D6; font-size: 17px">Duyệt nhanh</a>
+  </div>
+
+  <div style="position: absolute; top: 98px; left: 0; right: 0; bottom: 83px; display: flex; flex-direction: column; gap: 10px">
+    <h1 style="margin: 0; padding: 0 16px; font-size: 34px; line-height: 41px; font-weight: 700">Người gửi</h1>
+    <div style="padding: 0 16px">
+      <label for="sender-search" style="height: 36px; border-radius: 10px; background: rgba(118,118,128,0.12); display: flex; align-items: center; gap: 6px; padding: 0 8px; color: #6C6C70">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Tìm người gửi</span>
+        <input id="sender-search" type="search" placeholder="Tìm người gửi" style="flex: 1; border: none; outline: none; background: transparent; font: inherit; font-size: 17px; color: #000; min-width: 0">
+      </label>
+    </div>
+    <div style="padding: 0 16px">
+      <div role="tablist" aria-label="Sắp xếp theo" style="height: 32px; border-radius: 9px; background: rgba(118,118,128,0.12); padding: 2px; display: grid; grid-template-columns: repeat(3, 1fr); box-sizing: border-box">
+        <button role="tab" aria-selected="true" style="border: none; border-radius: 7px; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04); font: inherit; font-size: 13px; font-weight: 600; color: #000; cursor: pointer">Số lượng</button>
+        <button role="tab" aria-selected="false" style="border: none; border-radius: 7px; background: transparent; font: inherit; font-size: 13px; color: #000; cursor: pointer">Dung lượng</button>
+        <button role="tab" aria-selected="false" style="border: none; border-radius: 7px; background: transparent; font: inherit; font-size: 13px; color: #000; cursor: pointer">Tỉ lệ đọc</button>
+      </div>
+    </div>
+
+    <div style="font-size: 13px; color: #6C6C70; text-transform: uppercase; padding: 4px 32px 0">214 người gửi · 28.750 mail</div>
+    <div style="margin: 0 16px; background: #fff; border-radius: 12px; overflow: hidden">
+      <div style="position: relative; height: 60px; overflow: hidden; border-bottom: 0.5px solid #E0E0E3">
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; display: flex">
+          <button style="width: 74px; border: none; background: #E07A00; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M4 20L20 4"></path></svg>Huỷ ĐK</button>
+          <button style="width: 74px; border: none; background: #C9302C; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>Xoá hết</button>
+        </div>
+        <div style="position: absolute; top: 0; bottom: 0; left: -148px; width: 100%; background: #fff; display: flex; align-items: center; gap: 12px; padding: 0 16px; box-sizing: border-box">
+          <span style="width: 40px; height: 40px; border-radius: 20px; background: #C2410C; color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none">S</span>
+          <span style="flex: 1; display: flex; flex-direction: column; min-width: 0"><span style="font-size: 17px">Shopee</span><span style="font-size: 13px; color: #6C6C70; white-space: nowrap">1.240 mail · 312 MB · đọc 2%</span></span>
+        </div>
+      </div>
+      <sc-for list="{{senders}}" as="s" hint-placeholder-count="7">
+        <a href="SwipeReview.dc.html" style="height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 16px; text-decoration: none; color: #000; border-bottom: 0.5px solid #E0E0E3; box-sizing: border-box">
+          <span style="width: 40px; height: 40px; border-radius: 20px; background: {{s.bg}}; color: #fff; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none">{{s.initial}}</span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <span style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.name}}</span><span style="font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; flex: none">{{s.count}}</span></span>
+            <span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; height: 4px; border-radius: 2px; background: #EDEDF0; overflow: hidden; display: block"><span style="display: block; height: 100%; width: {{s.pct}}; background: #0A66D6; border-radius: 2px"></span></span><span style="font-size: 13px; color: {{s.readColor}}; font-variant-numeric: tabular-nums; width: 64px; text-align: right; flex: none">đọc {{s.read}}</span></span>
+          </span>
+          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C4C4C7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M9 5l7 7-7 7"></path></svg>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav aria-label="Thanh tab" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; background: rgba(249,249,249,0.94); border-top: 0.5px solid rgba(60,60,67,0.29); display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 6px; box-sizing: border-box">
+    <a href="Inbox.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l2.5-8h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path><path d="M3 13h5l1.5 3h5L16 13h5"></path></svg><span>Hộp thư</span></a>
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg><span>Dọn dẹp</span></a>
+    <a href="Senders.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #0A66D6; font-size: 10px; font-weight: 600">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.2c2.1.7 3.5 2.8 3.5 5.8"></path></svg><span>Người gửi</span></a>
+    <a href="Tags.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg><span>Tags</span></a>
+    <a href="Settings.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"></path></svg><span>Cài đặt</span></a>
+    <div aria-hidden="true" style="position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #000"></div>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+  const low = '#B3261E', mid = '#B25400', ok = '#157A41';
+  return {
+    senders: [
+      { name: 'Lazada', initial: 'L', bg: '#1D4ED8', count: '986', pct: '80%', read: '4%', readColor: low },
+      { name: 'Tech Brief VN', initial: 'T', bg: '#0F766E', count: '742', pct: '60%', read: '11%', readColor: low },
+      { name: 'Ngân hàng ACB', initial: 'A', bg: '#1E3A8A', count: '618', pct: '50%', read: '88%', readColor: ok },
+      { name: 'Grab', initial: 'G', bg: '#15803D', count: '540', pct: '44%', read: '23%', readColor: mid },
+      { name: 'LinkedIn', initial: 'in', bg: '#0A5BC4', count: '502', pct: '40%', read: '9%', readColor: low },
+      { name: 'Tiki', initial: 'T', bg: '#2563EB', count: '431', pct: '35%', read: '6%', readColor: low },
+      { name: 'Phòng Nhân sự', initial: 'HR', bg: '#6D28D9', count: '214', pct: '17%', read: '97%', readColor: ok }
+    ]
+  };
+}
+}
+</script>
+</body>
+</html>

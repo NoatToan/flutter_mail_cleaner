@@ -1,0 +1,25 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-16T09:00:00Z"},"title":"Mail Cleaner — iOS App Design","launch":{"view":"focused","file":"Inbox.dc.html"},"pages":[],"boards":{
+"Mailboxes.dc.html":{"x":0,"y":-1264,"w":390,"h":844,"title":"Hộp thư"},
+"Inbox.dc.html":{"x":470,"y":-1264,"w":390,"h":844,"title":"Hộp thư đến hợp nhất (trang chủ)","is_interactive":true},
+"MailDetail.dc.html":{"x":940,"y":-1264,"w":390,"h":844,"title":"Đọc mail"},
+"Welcome.dc.html":{"x":0,"y":0,"w":390,"h":844,"title":"Chào mừng"},
+"AddAccount.dc.html":{"x":470,"y":0,"w":390,"h":844,"title":"Thêm tài khoản"},
+"Scanning.dc.html":{"x":940,"y":0,"w":390,"h":844,"title":"Đang quét"},
+"Main.dc.html":{"x":1410,"y":0,"w":390,"h":844,"title":"Tổng quan"},
+"ScanReview.dc.html":{"x":0,"y":1264,"w":390,"h":844,"title":"Smart Scan – Kết quả","is_interactive":true},
+"CleanDone.dc.html":{"x":470,"y":1264,"w":390,"h":844,"title":"Dọn xong"},
+"SwipeReview.dc.html":{"x":940,"y":1264,"w":390,"h":844,"title":"Duyệt theo người gửi"},
+"Senders.dc.html":{"x":1410,"y":1264,"w":390,"h":844,"title":"Người gửi"},
+"Tags.dc.html":{"x":0,"y":2528,"w":390,"h":844,"title":"Tags"},
+"CatchUp.dc.html":{"x":470,"y":2528,"w":390,"h":844,"title":"Tóm tắt bản tin"},
+"AICommand.dc.html":{"x":940,"y":2528,"w":390,"h":844,"title":"Lệnh AI"},
+"Settings.dc.html":{"x":1410,"y":2528,"w":390,"h":844,"title":"Cài đặt AI & quyền riêng tư"}
+},
+"order":["Welcome.dc.html","AddAccount.dc.html","Scanning.dc.html","ScanReview.dc.html","CleanDone.dc.html","SwipeReview.dc.html","Senders.dc.html","Tags.dc.html","CatchUp.dc.html","AICommand.dc.html","Settings.dc.html","Main.dc.html","Mailboxes.dc.html","MailDetail.dc.html","Inbox.dc.html"],
+"notes":{
+"note-row-0":{"kind":"title1","text":"Hộp thư — trang chủ","x":0,"y":-1564,"maxW":1800},
+"note-row-1":{"kind":"title1","text":"Onboarding & quét","x":0,"y":-300,"maxW":1800},
+"note-row-2":{"kind":"title1","text":"Dọn dẹp","x":0,"y":964,"maxW":1800},
+"note-row-3":{"kind":"title1","text":"Hiểu & đọc nhanh","x":0,"y":2228,"maxW":1800}
+},
+"designSystems":[]}

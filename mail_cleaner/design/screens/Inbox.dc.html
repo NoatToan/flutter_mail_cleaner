@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Hộp thư đến</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0A66D6}a:hover{color:#084FA8}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FFFFFF; font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif; color: #000; position: relative; overflow: hidden">
+
+  <div style="position: absolute; top: 54px; left: 0; right: 0; height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; box-sizing: border-box">
+    <a href="Mailboxes.dc.html" style="height: 44px; display: flex; align-items: center; gap: 2px; text-decoration: none; color: #0A66D6; font-size: 17px">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg><span>Hộp thư</span></a>
+    <div style="display: flex; align-items: center">
+      <a href="AICommand.dc.html" aria-label="Lệnh AI bằng lời" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0A66D6">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg></a>
+      <button style="height: 44px; padding: 0 8px; border: none; background: transparent; color: #0A66D6; font: inherit; font-size: 17px; cursor: pointer">Chọn</button>
+    </div>
+  </div>
+
+  <div style="position: absolute; top: 98px; left: 0; right: 0; bottom: 127px; display: flex; flex-direction: column">
+    <h1 style="margin: 0; padding: 0 16px; font-size: 32px; line-height: 41px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{title}}</h1>
+
+    <div role="tablist" aria-label="Tài khoản" style="display: flex; gap: 8px; padding: 2px 16px 0; height: 44px; align-items: center; flex: none">
+      <sc-for list="{{scopes}}" as="s" hint-placeholder-count="4">
+        <button role="tab" aria-selected="{{s.selected}}" onClick="{{s.select}}" style="height: 44px; padding: 0; border: none; background: transparent; font: inherit; cursor: pointer; display: flex; align-items: center">
+          <span style="height: 32px; padding: 0 12px; border-radius: 16px; background: {{s.bg}}; color: {{s.fg}}; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 6px">
+            <span style="width: 8px; height: 8px; border-radius: 4px; background: {{s.dot}}; display: {{s.dotDisplay}}"></span>{{s.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div aria-label="Phân loại AI" style="display: flex; gap: 6px; padding: 0 16px; height: 44px; align-items: center; flex: none; border-bottom: 0.5px solid #C6C6C8">
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+        <button aria-pressed="{{c.pressed}}" onClick="{{c.toggle}}" style="height: 44px; padding: 0; border: none; background: transparent; font: inherit; cursor: pointer; display: flex; align-items: center">
+          <span style="height: 28px; padding: 0 10px; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; box-shadow: inset 0 0 0 1px {{c.ring}}; font-size: 13px; font-weight: 600; display: flex; align-items: center">{{c.label}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <a href="ScanReview.dc.html" style="margin: 8px 16px; min-height: 44px; border-radius: 12px; background: #EEF4FD; display: flex; align-items: center; gap: 10px; padding: 0 12px; text-decoration: none; color: #0A3F87; flex: none">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A66D6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path></svg>
+      <span style="flex: 1; font-size: 15px"><b style="font-weight: 600">AI:</b> 312 mail khuyến mãi có thể dọn</span>
+      <span style="font-size: 15px; font-weight: 600; color: #0A66D6">Xem</span>
+    </a>
+
+    <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column">
+      <sc-for list="{{mails}}" as="m" hint-placeholder-count="5">
+        <sc-if value="{{m.swiped}}" hint-placeholder-val="{{ false }}">
+          <div style="position: relative; height: 102px; overflow: hidden; flex: none; background: #fff">
+            <div style="position: absolute; right: 0; top: 0; bottom: 0; display: flex">
+              <button style="width: 74px; border: none; background: #9A4700; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"></rect><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"></path></svg>Lưu trữ</button>
+              <button style="width: 74px; border: none; background: #C9302C; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg>Xoá</button>
+            </div>
+            <div style="position: absolute; top: 0; bottom: 0; left: -148px; width: 100%; background: #fff; display: flex; box-sizing: border-box; border-bottom: 0.5px solid #C6C6C8">
+              <span style="width: 3px; background: {{m.color}}; flex: none"></span>
+              <span style="width: 25px; flex: none"></span>
+              <span style="flex: 1; padding: 10px 16px 10px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                <span style="display: flex; align-items: center; gap: 6px"><span style="width: 16px; height: 16px; border-radius: 4px; background: {{m.color}}; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none">{{m.badge}}</span><span style="flex: 1; font-size: 17px; font-weight: {{m.weight}}">{{m.sender}}</span><span style="font-size: 15px; color: #6C6C70">{{m.time}}</span></span>
+                <span style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{m.subject}}</span>
+                <span style="font-size: 15px; line-height: 20px; color: #6C6C70; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical">{{m.preview}}</span>
+              </span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{m.normal}}" hint-placeholder-val="{{ true }}">
+          <a href="{{m.href}}" style="display: flex; text-decoration: none; color: #000; flex: none; min-height: 102px; background: #fff">
+            <span style="width: 3px; background: {{m.color}}; flex: none"></span>
+            <span style="width: 25px; flex: none; display: flex; justify-content: center; padding-top: 17px; box-sizing: border-box">
+              <sc-if value="{{m.unread}}" hint-placeholder-val="{{ true }}"><span aria-label="Chưa đọc" style="width: 10px; height: 10px; border-radius: 5px; background: #0A66D6; display: block"></span></sc-if>
+            </span>
+            <span style="flex: 1; padding: 10px 16px 10px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-bottom: 0.5px solid #C6C6C8">
+              <span style="display: flex; align-items: center; gap: 6px"><span aria-label="{{m.acct}}" style="width: 16px; height: 16px; border-radius: 4px; background: {{m.color}}; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none">{{m.badge}}</span><span style="flex: 1; font-size: 17px; font-weight: {{m.weight}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{m.sender}}</span><span style="font-size: 15px; color: #6C6C70; flex: none">{{m.time}}</span><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#C4C4C7" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M9 5l7 7-7 7"></path></svg></span>
+              <span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{m.subject}}</span><span style="display: {{m.tagDisplay}}; height: 20px; padding: 0 7px; border-radius: 6px; background: {{m.tagBg}}; color: {{m.tagFg}}; font-size: 12px; font-weight: 600; align-items: center; flex: none">{{m.tag}}</span></span>
+              <span style="font-size: 15px; line-height: 20px; color: #6C6C70; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical">{{m.preview}}</span>
+            </span>
+          </a>
+        </sc-if>
+      </sc-for>
+      <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 48px 32px; text-align: center; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 17px; font-weight: 600">Không có mail</span><span style="font-size: 15px; color: #6C6C70">Không có mail nào trong mục này.</span></div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 83px; height: 44px; background: rgba(249,249,249,0.94); border-top: 0.5px solid rgba(60,60,67,0.29); display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+    <button aria-label="Lọc mail" style="width: 44px; height: 44px; border: none; background: transparent; color: #0A66D6; cursor: pointer; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M7.5 9.5h9M9 12.5h6M10.5 15.5h3"></path></svg>
+    </button>
+    <span style="display: flex; flex-direction: column; align-items: center"><span style="font-size: 12px; color: #000">Cập nhật vừa xong</span><span style="font-size: 11px; color: #6C6C70; font-variant-numeric: tabular-nums">{{unreadLabel}}</span></span>
+    <button aria-label="Soạn mail mới" style="width: 44px; height: 44px; border: none; background: transparent; color: #0A66D6; cursor: pointer; display: flex; align-items: center; justify-content: center">
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"></path><path d="M17.5 3.5l3 3L12 15l-4 1 1-4z"></path></svg>
+    </button>
+  </div>
+
+  <nav aria-label="Thanh tab" style="position: absolute; left: 0; right: 0; bottom: 0; height: 83px; background: rgba(249,249,249,0.94); border-top: 0.5px solid rgba(60,60,67,0.29); display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 6px; box-sizing: border-box">
+    <a href="Inbox.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #0A66D6; font-size: 10px; font-weight: 600">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l2.5-8h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path><path d="M3 13h5l1.5 3h5L16 13h5"></path></svg><span>Hộp thư</span></a>
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg><span>Dọn dẹp</span></a>
+    <a href="Senders.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.2c2.1.7 3.5 2.8 3.5 5.8"></path></svg><span>Người gửi</span></a>
+    <a href="Tags.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"></path><circle cx="7.5" cy="7.5" r="1.5"></circle></svg><span>Tags</span></a>
+    <a href="Settings.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; height: 49px; text-decoration: none; color: #6C6C70; font-size: 10px; font-weight: 500">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"></path></svg><span>Cài đặt</span></a>
+    <div aria-hidden="true" style="position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #000"></div>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+  const st = this.state || {};
+  const scope = st.scope || 'all';
+  const cat = st.cat || null;
+  const ACC = {
+    gmail: { name: 'Gmail', color: '#C5221F', badge: 'G' },
+    outlook: { name: 'Outlook', color: '#0A66D6', badge: 'O' },
+    icloud: { name: 'iCloud', color: '#4B49C8', badge: 'i' }
+  };
+  const TAG = {
+    'Tài chính': ['#E6ECF8', '#1E3A8A'],
+    'HR': ['#EFE7FB', '#5B21B6'],
+    'News': ['#E0F2EF', '#0F5F58'],
+    'Promotion': ['#FCEEDF', '#9A4700'],
+    'Chuyến đi': ['#E0F0F5', '#0E6178']
+  };
+  const data = [
+    { a: 'gmail', cat: 'gd', sender: 'Ngân hàng ACB', time: '09:41', subject: 'Sao kê thẻ tín dụng kỳ 10/2026', preview: 'Kính gửi Quý khách, sao kê thẻ đuôi 4821 kỳ 15/09 – 14/10 đã sẵn sàng. Hạn thanh toán: 05/11.', unread: true, tag: 'Tài chính' },
+    { a: 'outlook', cat: 'chinh', sender: 'Phòng Nhân sự', time: '09:12', subject: 'Chào mừng Toàn — lịch onboarding tuần đầu', preview: 'Thứ Hai 9:00 nhận thiết bị tại tầng 5, 10:30 gặp team Product. Vui lòng mang CCCD để làm thẻ ra vào.', unread: true, tag: 'HR' },
+    { a: 'gmail', cat: 'cn', sender: 'Tech Brief VN', time: '08:30', subject: 'Số #143: Startup AI Việt chuyển sang mô hình nhỏ', preview: 'Giá thuê GPU giảm gần 30% trong quý; nhiều đội chuyển sang suy luận trên thiết bị để tiết kiệm chi phí.', unread: true, tag: 'News', href: 'MailDetail.dc.html' },
+    { a: 'gmail', cat: 'km', sender: 'Shopee', time: '08:05', subject: 'Flash Sale 16.10 — giảm đến 50%', preview: 'Săn deal 0Đ từ 0h, freeship mọi đơn từ 0Đ. Voucher 100K đang chờ bạn trong ví.', unread: false, tag: 'Promotion', swiped: true },
+    { a: 'outlook', cat: 'chinh', sender: 'Minh Anh', time: '07:48', subject: 'Re: Review UI màn Smart Scan', preview: 'Mình thấy nút Dọn nên hiện dung lượng đang chọn, phần Được bảo vệ ok rồi. Chiều nay sync 15 phút nhé?', unread: true, tag: '' },
+    { a: 'icloud', cat: 'gd', sender: 'Vietjet Air', time: 'Hôm qua', subject: 'Xác nhận đặt chỗ SGN → HAN, 24/10', preview: 'Mã đặt chỗ: [MÃ ĐẶT CHỖ]. Chuyến bay khởi hành 07:15, vui lòng có mặt tại sân bay trước 2 giờ.', unread: true, tag: 'Chuyến đi' },
+    { a: 'icloud', cat: 'gd', sender: 'Grab', time: 'Hôm qua', subject: 'Biên nhận chuyến GrabCar của bạn', preview: 'Cảm ơn bạn đã đi cùng Grab. Tổng cộng 86.000đ, thanh toán bằng thẻ. Quận 1 → Quận 7.', unread: false, tag: '' },
+    { a: 'gmail', cat: 'gd', sender: 'VCB Digibank', time: 'Hôm qua', subject: 'Mã OTP xác thực giao dịch', preview: 'Mã OTP của bạn có hiệu lực trong 5 phút. Tuyệt đối không chia sẻ mã này cho bất kỳ ai.', unread: false, tag: '' },
+    { a: 'outlook', cat: 'km', sender: 'Lazada', time: 'Thứ Ba', subject: 'Voucher 100K dành riêng cho bạn', preview: 'Chỉ còn 2 ngày để dùng voucher. Áp dụng cho đơn từ 299K trên toàn sàn.', unread: false, tag: 'Promotion' },
+    { a: 'outlook', cat: 'cn', sender: 'LinkedIn', time: 'Thứ Ba', subject: 'Bạn xuất hiện trong 23 lượt tìm kiếm', preview: 'Nhà tuyển dụng từ Singapore và Úc đã xem hồ sơ của bạn tuần này.', unread: false, tag: '' },
+    { a: 'icloud', cat: 'gd', sender: 'Apple', time: 'Thứ Hai', subject: 'Hoá đơn iCloud+ 50 GB', preview: 'Biên lai cho gói iCloud+ 50 GB hằng tháng. Gia hạn tự động vào 13/11.', unread: false, tag: 'Tài chính' },
+    { a: 'icloud', cat: 'chinh', sender: 'Lan Phương', time: 'Thứ Hai', subject: 'Ảnh chuyến Đà Lạt', preview: 'Gửi bạn album ảnh hôm đi Đà Lạt nè, có mấy tấm ở đồi chè đẹp lắm.', unread: false, tag: '' }
+  ];
+  const mails = data
+    .filter(m => (scope === 'all' || m.a === scope) && (!cat || m.cat === cat))
+    .map(m => {
+      const acc = ACC[m.a];
+      const t = TAG[m.tag] || ['transparent', 'transparent'];
+      return {
+        ...m, acct: acc.name, color: acc.color, badge: acc.badge,
+        weight: m.unread ? '600' : '400',
+        swiped: !!m.swiped, normal: !m.swiped,
+        href: m.href || '#',
+        tagDisplay: m.tag ? 'inline-flex' : 'none', tagBg: t[0], tagFg: t[1]
+      };
+    });
+  const scopeDefs = [
+    { id: 'all', label: 'Tất cả', dot: 'transparent' },
+    { id: 'gmail', label: 'Gmail', dot: ACC.gmail.color },
+    { id: 'outlook', label: 'Outlook', dot: ACC.outlook.color },
+    { id: 'icloud', label: 'iCloud', dot: ACC.icloud.color }
+  ];
+  const scopes = scopeDefs.map(s => {
+    const on = s.id === scope;
+    return {
+      ...s, selected: on ? 'true' : 'false',
+      bg: on ? '#1C1C1E' : '#F2F2F7', fg: on ? '#FFFFFF' : '#1C1C1E',
+      dotDisplay: s.id === 'all' ? 'none' : 'block',
+      select: () => this.setState({ scope: s.id })
+    };
+  });
+  const catDefs = [
+    { id: 'chinh', label: 'Chính' }, { id: 'gd', label: 'Giao dịch' },
+    { id: 'cn', label: 'Cập nhật' }, { id: 'km', label: 'Khuyến mãi' }
+  ];
+  const cats = catDefs.map(c => {
+    const on = c.id === cat;
+    return {
+      ...c, pressed: on ? 'true' : 'false',
+      bg: on ? '#0A66D6' : '#FFFFFF', fg: on ? '#FFFFFF' : '#0A4FA8', ring: on ? '#0A66D6' : '#C9D9F0',
+      toggle: () => this.setState({ cat: on ? null : c.id })
+    };
+  });
+  const titles = { all: 'Tất cả hộp thư đến', gmail: 'Gmail', outlook: 'Outlook', icloud: 'iCloud' };
+  const unread = { all: 48, gmail: 21, outlook: 17, icloud: 10 };
+  return { mails, scopes, cats, title: titles[scope], unreadLabel: unread[scope] + ' chưa đọc', isEmpty: mails.length === 0 };
+}
+}
+</script>
+</body>
+</html>
