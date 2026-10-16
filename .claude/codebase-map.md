@@ -1,0 +1,15 @@
+<!-- tlm:codebase-map v1 -->
+- stack: flutter (3.47, Dart 3.13) — app at `mail_cleaner/` (package `ai_smart_mail`, display name "AI Smart Mail")
+- platforms: macOS 13+ first; iOS 17+ and Android 26+ after macOS is production-ready. One codebase, core logic shared 100%.
+- state management: riverpod 3 (`@riverpod` codegen)
+- persistence: **drift (SQLite)** for mail data — deviation from the shared_preferences default because TECH_SPEC needs structured queries over ~100k mails (`lib/core/database/`). shared_preferences + `PersistedState` mixin (`lib/core/storage/preferences.dart`, listenSelf) for settings/small state. Secrets (passwords, OAuth tokens) in flutter_secure_storage (Keychain).
+- read models: drift row classes (`AccountRow`, `MessageRow`, …) are used directly as read models; freezed is for wire/contract DTOs (`core/mail/mail_provider.dart`, `core/ai/mail_classifier.dart`).
+- mail transport: IMAP via `enough_mail` behind `MailProvider` (`lib/core/mail/`). dio only for the future LLM proxy.
+- routing: go_router; paths in `lib/app/routes.dart`, table in `lib/app/router.dart` (thin).
+- UI: **stock Material 3 widgets styled by `lib/core/theme/app_theme.dart`** (component themes) — deviation from the "Base* wrapper for every widget" rule, per the user: Flutter's library already covers base components; add a shared widget to `core/widgets/` only when no stock widget fits (today: `AccountBadge`, `AppEmptyState`/`AppErrorState`). Feature widgets stay in their feature.
+- tokens: colors/spacing/pane sizes in `lib/core/theme/app_tokens.dart` (`AppTokens` ThemeExtension, `AppSpace`, `AppRadius`, `AppPane`, `AppPalette`) — no hex literals in features.
+- responsive: `WindowSize` breakpoints (`lib/core/layout/window_size.dart`) compact <600 / medium <1024 / expanded <1440 / large. macOS min window 900×600 (MainFlutterWindow.swift).
+- i18n: easy_localization, Vietnamese default + English; **one JSON per feature** `assets/translations/<feature>/{vi,en}.json` merged by `FeatureAssetLoader` (top-level key = feature). New feature → add folder to loader list and pubspec assets.
+- forms: reactive_forms · lint: very_good_analysis (constructor-shorthand lints off) · testing: mocktail + `ProviderContainer.test`
+- feature-first: `lib/features/<feature>/{data,domain,presentation/{providers,screens,widgets}}`; cross-feature only in `lib/core/`.
+- notable: avoid Hive/Isar (stalled 2026); never set \Seen when fetching (BODY.PEEK); Protected list is checked before any delete.

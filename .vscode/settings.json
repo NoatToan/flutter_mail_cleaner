@@ -1,0 +1,12 @@
+{
+  "dart.projectSearchDepth": 2,
+  "dart.flutterSdkPath": "/Users/Apple/Documents/flutter",
+  "files.exclude": {
+    "**/*.g.dart": false,
+    "**/*.freezed.dart": false
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.dart": "${capture}.g.dart, ${capture}.freezed.dart"
+  }
+}

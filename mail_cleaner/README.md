@@ -1,4 +1,4 @@
-# Dọn Mail (Mail Cleaner) — Project bundle
+# AI Smart Mail (Mail Cleaner) — Project bundle
 
 Thư mục này gom mọi thứ đã làm trong phiên lập kế hoạch (15–16/10/2026) để bạn code tiếp trên máy.
 

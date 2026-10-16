@@ -1,0 +1,22 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "design/**"
+    - build/**
+    - android/**
+    - ios/**
+    - macos/**
+  errors:
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    # App code, not a published package: public API docs add noise without readers.
+    public_member_api_docs: false
+    lines_longer_than_80_chars: false
+    # Dart 3.13 constructor shorthand; classic `ClassName(...)` constructors are clearer for the team.
+    unnecessary_type_name_in_constructor: false
+    unnecessary_const_in_enum_constructor: false

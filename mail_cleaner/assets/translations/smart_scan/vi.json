@@ -1,0 +1,70 @@
+{
+  "smart_scan": {
+    "title": "Smart Scan",
+    "rescan": "Quét lại",
+    "freeable": "Có thể giải phóng",
+    "legend_safe": "An toàn {size}",
+    "legend_review": "Nên xem lại {size}",
+    "section_safe": "An toàn để xoá",
+    "section_review": "Nên xem lại",
+    "empty": {
+      "title": "Hộp thư sạch sẽ!",
+      "message": "Không có nhóm nào cần dọn vào lúc này."
+    },
+    "groups": {
+      "description_with_senders": "{senders} · {count} mail",
+      "senders_and_more": "{senders} và {more} nơi khác",
+      "oldPromo": {
+        "title": "Promo cũ > 6 tháng"
+      },
+      "unreadNewsletter": {
+        "title": "Newsletter bỏ đọc"
+      },
+      "expiredOtp": {
+        "title": "OTP hết hạn",
+        "description": "Mã xác thực cũ hơn 7 ngày · {count} mail"
+      },
+      "oldNotifications": {
+        "title": "Thông báo cũ",
+        "description": "Mạng xã hội, giao hàng · {count} mail"
+      },
+      "largeAttachments": {
+        "title": "Đính kèm lớn",
+        "description": "{count} mail có tệp trên 10 MB"
+      },
+      "oldSpam": {
+        "title": "Thư mục Spam",
+        "description": "Spam cũ hơn 30 ngày · {count} mail"
+      },
+      "duplicates": {
+        "title": "Mail trùng lặp",
+        "description": "{count} bản sao giống hệt nhau"
+      }
+    },
+    "protected": {
+      "label": "Tài chính · HR · Hợp đồng",
+      "summary": "{count} mail · không bao giờ tự động xoá"
+    },
+    "footer": {
+      "selection": "Đã chọn {count} nhóm · vào Thùng rác, hoàn tác 30 ngày",
+      "clean": "Dọn {size}"
+    },
+    "confirm": {
+      "title": "Xác nhận dọn dẹp",
+      "message": "Bạn sắp xoá {count} mail. Vẫn còn hoàn tác trong 30 ngày.",
+      "action": "Dọn ngay"
+    },
+    "done": {
+      "title": "Dọn xong",
+      "no_result": "Chưa có kết quả dọn dẹp nào",
+      "back_to_dashboard": "Về Tổng quan",
+      "freed_label": "Đã giải phóng",
+      "freed_count": "{count} mail đã chuyển vào Thùng rác",
+      "before": "Trước",
+      "after": "Sau",
+      "empty_trash": "Dọn Thùng rác",
+      "empty_trash_title": "Dọn Thùng rác",
+      "empty_trash_explanation": "Thùng rác trên máy chủ sẽ tự động xoá vĩnh viễn sau 30 ngày. Tính năng dọn Thùng rác ngay lập tức chưa khả dụng ở bản này."
+    }
+  }
+}

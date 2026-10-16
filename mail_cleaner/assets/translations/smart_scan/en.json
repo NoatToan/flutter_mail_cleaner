@@ -1,0 +1,70 @@
+{
+  "smart_scan": {
+    "title": "Smart Scan",
+    "rescan": "Rescan",
+    "freeable": "Freeable space",
+    "legend_safe": "Safe {size}",
+    "legend_review": "Review {size}",
+    "section_safe": "Safe to delete",
+    "section_review": "Worth a look",
+    "empty": {
+      "title": "Inbox is clean!",
+      "message": "Nothing needs cleaning up right now."
+    },
+    "groups": {
+      "description_with_senders": "{senders} · {count} mail",
+      "senders_and_more": "{senders} and {more} others",
+      "oldPromo": {
+        "title": "Promos older than 6 months"
+      },
+      "unreadNewsletter": {
+        "title": "Unread newsletters"
+      },
+      "expiredOtp": {
+        "title": "Expired OTP",
+        "description": "Codes older than 7 days · {count} mail"
+      },
+      "oldNotifications": {
+        "title": "Old notifications",
+        "description": "Social, delivery updates · {count} mail"
+      },
+      "largeAttachments": {
+        "title": "Large attachments",
+        "description": "{count} mail with files over 10 MB"
+      },
+      "oldSpam": {
+        "title": "Spam folder",
+        "description": "Spam older than 30 days · {count} mail"
+      },
+      "duplicates": {
+        "title": "Duplicate mail",
+        "description": "{count} identical copies"
+      }
+    },
+    "protected": {
+      "label": "Finance · HR · Contracts",
+      "summary": "{count} mail · never auto-deleted"
+    },
+    "footer": {
+      "selection": "{count} groups selected · goes to Trash, undo within 30 days",
+      "clean": "Clean {size}"
+    },
+    "confirm": {
+      "title": "Confirm cleanup",
+      "message": "You're about to delete {count} mail. Undo is available for 30 days.",
+      "action": "Clean now"
+    },
+    "done": {
+      "title": "Clean complete",
+      "no_result": "No cleanup result yet",
+      "back_to_dashboard": "Back to Overview",
+      "freed_label": "Freed",
+      "freed_count": "{count} mail moved to Trash",
+      "before": "Before",
+      "after": "After",
+      "empty_trash": "Empty Trash",
+      "empty_trash_title": "Empty Trash",
+      "empty_trash_explanation": "The server trash automatically empties after 30 days. Emptying it immediately isn't available in this build yet."
+    }
+  }
+}

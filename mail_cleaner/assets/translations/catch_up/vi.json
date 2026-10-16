@@ -1,0 +1,19 @@
+{
+  "catch_up": {
+    "title": "Bắt kịp",
+    "no_senders": "Không có bản tin nào cần bắt kịp",
+    "no_senders_message": "Khi có newsletter chưa đọc, danh sách sẽ xuất hiện ở đây",
+    "all_caught_up": "Đã đọc hết rồi!",
+    "unread_issues": "{} số chưa đọc",
+    "no_summary_yet": "Chưa có nội dung để tóm tắt",
+    "loading_content": "Đang tải nội dung…",
+    "topic_heading": "{title} · {count} bài",
+    "topic_other": "Khác",
+    "issue_chip_generic": "Xem mail",
+    "mark_all_read": "Đánh dấu đã đọc tất cả {} số",
+    "archive": "Lưu trữ",
+    "archive_label": "Lưu trữ bản tin {}",
+    "unsubscribe": "Huỷ đăng ký",
+    "unsubscribe_requested": "Đã gửi yêu cầu huỷ đăng ký"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "senders": {
+    "title": "Senders",
+    "quick_review": "Quick review",
+    "pick_one": "Pick a sender to see details",
+    "search_hint": "Search senders",
+    "sort": {
+      "count": "Count",
+      "size": "Size",
+      "read_ratio": "Read ratio"
+    },
+    "empty": {
+      "title": "No senders yet",
+      "message": "Scan your inbox to see your senders."
+    },
+    "read_badge": "read {percent}",
+    "stat": {
+      "mail": "mail",
+      "size": "size",
+      "read_ratio": "read"
+    },
+    "recent_mail": "Recent mail",
+    "suggestion": {
+      "confidence": "Confidence {percent}",
+      "unsubscribe_and_delete": "Suggestion: Unsubscribe + delete",
+      "archive": "Suggestion: Archive",
+      "keep": "Suggestion: Keep",
+      "reason_unread_months": "You haven't read any mail from this sender in {months} months. No receipts or order codes.",
+      "reason_unread_generic": "You almost never open mail from this sender, mostly promotions.",
+      "reason_sometimes_read": "You only occasionally open mail from this sender — archiving could tidy things up.",
+      "reason_actively_read": "You regularly open mail from this sender."
+    },
+    "action": {
+      "delete_all": "Delete all",
+      "unsubscribe": "Unsubscribe",
+      "unsubscribe_short": "Unsub",
+      "keep": "Keep",
+      "delete": "Delete",
+      "archive": "Archive"
+    },
+    "review": {
+      "title": "Review by sender",
+      "progress": "{current} / {total}",
+      "shortcuts": "← Delete    ↑ Archive    ⌘U Unsub    Keep →",
+      "back_to_senders": "Back to senders",
+      "empty": {
+        "title": "Nothing to review",
+        "message": "Every sender already looks fine."
+      },
+      "done": {
+        "title": "All reviewed!",
+        "message": "You went through {count} senders."
+      }
+    }
+  }
+}

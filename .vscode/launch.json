@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AI Smart Mail (macOS)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "mail_cleaner",
+      "program": "lib/main.dart",
+      "deviceId": "macos"
+    },
+    {
+      "name": "AI Smart Mail (macOS, OAuth)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "mail_cleaner",
+      "program": "lib/main.dart",
+      "deviceId": "macos",
+      "args": ["--dart-define-from-file=config/oauth.json"]
+    }
+  ]
+}

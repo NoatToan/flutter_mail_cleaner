@@ -1,0 +1,56 @@
+{
+  "senders": {
+    "title": "Người gửi",
+    "quick_review": "Duyệt nhanh",
+    "pick_one": "Chọn một người gửi để xem chi tiết",
+    "search_hint": "Tìm người gửi",
+    "sort": {
+      "count": "Số lượng",
+      "size": "Dung lượng",
+      "read_ratio": "Tỉ lệ đọc"
+    },
+    "empty": {
+      "title": "Chưa có người gửi nào",
+      "message": "Quét hộp thư để xem danh sách người gửi."
+    },
+    "read_badge": "đọc {percent}",
+    "stat": {
+      "mail": "mail",
+      "size": "dung lượng",
+      "read_ratio": "đã đọc"
+    },
+    "recent_mail": "Mail gần đây",
+    "suggestion": {
+      "confidence": "Tin cậy {percent}",
+      "unsubscribe_and_delete": "Gợi ý: Huỷ đăng ký + xoá",
+      "archive": "Gợi ý: Lưu trữ",
+      "keep": "Gợi ý: Giữ",
+      "reason_unread_months": "Bạn chưa đọc mail nào từ người gửi này trong {months} tháng. Không có hoá đơn hay mã đơn hàng.",
+      "reason_unread_generic": "Bạn hầu như không mở mail từ người gửi này, phần lớn là quảng cáo.",
+      "reason_sometimes_read": "Thỉnh thoảng bạn mới mở mail từ người gửi này — có thể lưu trữ để gọn hộp thư.",
+      "reason_actively_read": "Bạn thường mở mail từ người gửi này."
+    },
+    "action": {
+      "delete_all": "Xoá hết",
+      "unsubscribe": "Huỷ đăng ký",
+      "unsubscribe_short": "Huỷ ĐK",
+      "keep": "Giữ",
+      "delete": "Xoá",
+      "archive": "Lưu trữ"
+    },
+    "review": {
+      "title": "Duyệt theo người gửi",
+      "progress": "{current} / {total}",
+      "shortcuts": "← Xoá    ↑ Lưu trữ    ⌘U Huỷ ĐK    Giữ →",
+      "back_to_senders": "Về danh sách người gửi",
+      "empty": {
+        "title": "Không có người gửi cần duyệt",
+        "message": "Mọi người gửi đều đã được đánh giá tốt."
+      },
+      "done": {
+        "title": "Đã duyệt xong!",
+        "message": "Bạn đã xem qua {count} người gửi."
+      }
+    }
+  }
+}

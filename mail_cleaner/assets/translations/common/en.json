@@ -1,0 +1,13 @@
+{
+  "common": {
+    "coming_soon": "Coming soon",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "done": "Done",
+    "undo": "Undo",
+    "back": "Back",
+    "error_generic": "Something went wrong. Please try again.",
+    "loading": "Loading…",
+    "on_device": "On device"
+  }
+}

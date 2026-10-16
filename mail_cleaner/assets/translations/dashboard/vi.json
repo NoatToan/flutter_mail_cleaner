@@ -1,0 +1,35 @@
+{
+  "dashboard": {
+    "title": "Tổng quan",
+    "ask_ai": "Hỏi AI",
+    "subtitle": "{accounts} tài khoản · quét lần cuối {lastSync}",
+    "never_synced": "chưa quét",
+    "just_now": "vừa xong",
+    "minutes_ago": "{count} phút trước",
+    "hours_ago": "{count} giờ trước",
+    "days_ago": "{count} ngày trước",
+    "smart_scan_hero": {
+      "label": "Smart Scan",
+      "freeable": "Có thể giải phóng",
+      "summary": "{count} mail · {groups} nhóm an toàn hoặc nên xem lại",
+      "action": "Xem & dọn"
+    },
+    "health": {
+      "title": "Sức khoẻ hộp thư",
+      "band_excellent": "Tuyệt vời",
+      "band_good": "Khá",
+      "band_fair": "Trung bình",
+      "band_poor": "Cần dọn dẹp",
+      "unread_count": "{count} chưa đọc",
+      "promo_share": "{percent} quảng cáo"
+    },
+    "storage": {
+      "estimated": "{size} (ước tính)"
+    },
+    "quick": {
+      "senders": "Duyệt người gửi",
+      "catch_up": "Tóm tắt bản tin",
+      "tags": "Gắn tag tự động"
+    }
+  }
+}

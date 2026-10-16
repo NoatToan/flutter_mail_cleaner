@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>AI Smart Mail — app icon</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A66D6"/>
+      <stop offset="1" stop-color="#0B7A8C"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="0" y1="100" x2="0" y2="600" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="flap" x1="272" y1="380" x2="512" y2="620" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#063B7A" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#063B7A" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Big Sur rounded-square tile, 100px safe margin -->
+  <rect x="100" y="100" width="824" height="824" rx="184" ry="184" fill="url(#tile)"/>
+  <rect x="100" y="100" width="824" height="824" rx="184" ry="184" fill="url(#highlight)"/>
+
+  <!-- Envelope body (white, rounded) -->
+  <rect x="272" y="380" width="480" height="340" rx="32" ry="32" fill="#FFFFFF"/>
+
+  <!-- Envelope flap: V from top corners to center -->
+  <path d="M 272 380 L 512 620 L 752 380 Z" fill="url(#flap)"/>
+  <path d="M 272 380 L 512 620 L 752 380" fill="none" stroke="#0A66D6" stroke-width="10" stroke-linejoin="round" stroke-opacity="0.65"/>
+
+  <!-- Green check badge, bottom-right of envelope -->
+  <circle cx="740" cy="740" r="112" fill="#157A41"/>
+  <circle cx="740" cy="740" r="112" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-opacity="0.95"/>
+  <path d="M 686 742 L 724 782 L 798 702"
+        fill="none" stroke="#FFFFFF" stroke-width="26"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

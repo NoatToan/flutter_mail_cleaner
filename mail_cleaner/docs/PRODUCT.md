@@ -1,10 +1,10 @@
-# Dọn Mail (Mail Cleaner) — Product Brief
+# AI Smart Mail (Mail Cleaner) — Product Brief
 
 > Bản gọn để code. Bản đầy đủ (bảng đối thủ, sơ đồ, mock-up, MoSCoW dropdown) nằm trong Claude Docs:
 > https://claude.ai/code/artifact/20654471-10ad-46b9-889d-14e5e055b6b9 (tab "Mail Cleaner App — Phân tích đối thủ & Use cases")
 
 ## Định vị
-App mobile (Flutter, iOS-first look) gom **Gmail, Outlook, iCloud** vào một hộp thư hợp nhất kiểu iOS Mail,
+App Flutter đa nền tảng — **macOS, iOS, Android** — gom **Gmail, Outlook, iCloud** vào một hộp thư hợp nhất kiểu iOS Mail,
 và dùng AI để **dọn inbox** (Smart Scan kiểu CleanMyMac), **tự gắn tag**, **tóm tắt newsletter**.
 - Privacy-first: mail/header/index **không rời máy**; cloud LLM chỉ khi user opt-in, đã xoá PII.
 - Kết nối bằng **IMAP** (OAuth2 XOAUTH2 cho Gmail/Outlook, app-specific password cho iCloud). POP3 bị loại.
@@ -49,6 +49,15 @@ Cleanfox (free, bán dữ liệu thống kê), Unroll.me (free, scandal dữ li�
 | UC-22 | An toàn | Chế độ AI on-device / cloud + log minh bạch | | Must |
 
 **Mới thêm theo design:** Trang chủ = **hộp thư hợp nhất kiểu iOS Mail** (Tất cả hộp thư đến + xem riêng từng provider), màn **Hộp thư** (mailboxes + hộp thư thông minh theo tag), màn **Đọc mail** có thẻ AI tóm tắt.
+
+## Nền tảng & thứ tự phát hành
+| Nền tảng | Kiểu giao diện | Thứ tự |
+|---|---|---|
+| **macOS** (13+) | Cửa sổ 3 cột kiểu Apple Mail: sidebar · danh sách · đọc mail; Cài đặt là cửa sổ riêng; phím tắt | **1 — làm trước** |
+| iOS (17+) | Tab bar 5 tab, large title (design/screens) | 2 |
+| Android (API 26+) | Cùng luồng iOS, theo Material 3 | 3 |
+
+Core logic (domain, sync, AI rule, DB) **dùng chung 100%**; chỉ lớp presentation thích ứng theo kích thước màn hình (xem TECH_SPEC §2a).
 
 ## Roadmap
 - **Phase 0 — Spike (1–2 tuần):** kết nối 3 provider, đo fetch 50–100k header, rule engine thô, **nộp Google verification ngay**.

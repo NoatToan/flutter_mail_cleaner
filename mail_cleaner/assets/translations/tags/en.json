@@ -1,0 +1,26 @@
+{
+  "tags": {
+    "title": "Tags",
+    "section_system": "Automatic by AI",
+    "section_custom": "Your tags",
+    "no_system_tags": "No system tags yet",
+    "no_custom_tags": "No tags yet",
+    "no_custom_tags_message": "Create a tag by description on the right to get started",
+    "protected": "Protected",
+    "new_tag": "New tag",
+    "create_by_words": "Create a tag by description",
+    "description_label": "Describe the kind of mail to group",
+    "description_hint": "e.g. Monthly electricity, water, internet bills",
+    "matched_count": "Matches {} mail",
+    "create_button": "Create tag \"{}\"",
+    "created_toast": "Created tag \"{}\"",
+    "on_device_note": "Custom tags run entirely on-device — mail content never leaves your machine. The AI keeps learning every time you edit a tag by hand.",
+    "edit_title": "Edit tag",
+    "name_label": "Tag name",
+    "color_label": "Color",
+    "protected_toggle": "Protected (never auto-deleted)",
+    "delete": "Delete",
+    "delete_confirm_title": "Delete this tag?",
+    "delete_confirm_body": "\"{}\" will be removed from every tagged mail. This does not affect the mail itself."
+  }
+}

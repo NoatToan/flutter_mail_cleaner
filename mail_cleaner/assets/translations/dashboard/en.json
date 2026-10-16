@@ -1,0 +1,35 @@
+{
+  "dashboard": {
+    "title": "Overview",
+    "ask_ai": "Ask AI",
+    "subtitle": "{accounts} accounts · last scanned {lastSync}",
+    "never_synced": "never scanned",
+    "just_now": "just now",
+    "minutes_ago": "{count} min ago",
+    "hours_ago": "{count} h ago",
+    "days_ago": "{count} d ago",
+    "smart_scan_hero": {
+      "label": "Smart Scan",
+      "freeable": "Freeable space",
+      "summary": "{count} mail · {groups} safe or review groups",
+      "action": "View & clean"
+    },
+    "health": {
+      "title": "Inbox health",
+      "band_excellent": "Excellent",
+      "band_good": "Good",
+      "band_fair": "Fair",
+      "band_poor": "Needs cleanup",
+      "unread_count": "{count} unread",
+      "promo_share": "{percent} promo"
+    },
+    "storage": {
+      "estimated": "{size} (estimated)"
+    },
+    "quick": {
+      "senders": "Review senders",
+      "catch_up": "Newsletter digest",
+      "tags": "Auto-tag mail"
+    }
+  }
+}

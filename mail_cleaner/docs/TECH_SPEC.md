@@ -1,4 +1,4 @@
-# Technical Spec — Dọn Mail
+# Technical Spec — AI Smart Mail
 
 > Bản gọn để code. Bản đầy đủ có nguồn trích dẫn + sơ đồ: tab "Technical Spec" của
 > https://claude.ai/code/artifact/20654471-10ad-46b9-889d-14e5e055b6b9 (research ngày 16/10/2026).
@@ -17,12 +17,28 @@ Flutter UI (Riverpod) ──commands──▶ Action Executor (queue + undo log)
      │                                      ▼
   Local DB (drift/SQLite WAL+FTS5) ◀── Sync Engine (isolate) ──▶ MailProvider adapter ──▶ IMAP (Gmail/Outlook/iCloud)
      ▲                                                              ▲ token
-     │                                                         Auth Manager (google_sign_in, flutter_appauth, secure storage)
+     │                                                         Auth Manager (google_sign_in, flutter_appauth, secure storage — Keychain trên macOS/iOS)
   AI layer (rule → LiteRT model → Apple FM/Gemini Nano)
      │ (opt-in)
   PII Scrubber ──HTTPS──▶ LLM proxy (stateless, no log, App Attest) ──▶ LLM (Haiku / Flash-Lite, paid tier)
 ```
 UI không gọi sync trực tiếp: thao tác → Action Executor, hiển thị ← stream từ DB.
+
+## 2a. Đa nền tảng & đa kích thước màn hình
+- Một codebase Flutter, target `macos`, `ios`, `android`. Thứ tự: macOS → iOS → Android.
+- Layout theo **độ rộng cửa sổ**, không theo hệ điều hành (iPad/Android tablet tự dùng layout rộng):
+
+| Breakpoint | Độ rộng | Layout |
+|---|---|---|
+| compact | < 600 | 1 cột, điều hướng bằng tab bar dưới (iPhone, Android phone) |
+| medium | 600–1023 | Sidebar thu gọn (NavigationRail) + danh sách; đọc mail đẩy sang màn mới |
+| expanded | 1024–1439 | Sidebar 224 + danh sách 360 + khung đọc |
+| large | ≥ 1440 | Như expanded, danh sách 400, khung đọc giới hạn 760 px chữ |
+
+- macOS: kích thước cửa sổ tối thiểu **900×600**, mặc định 1360×860, nhớ vị trí/kích thước. Cài đặt mở cửa sổ riêng 720×620.
+- Không hard-code kích thước pixel trong widget: spacing/radius/size lấy từ theme tokens; chữ theo `TextTheme` để tôn trọng Dynamic Type / font scale (test ở 0.85×–1.5×).
+- Mật độ: macOS dùng `VisualDensity.compact`, body 13 pt; mobile body 17 pt — cùng token, khác scale theo nền tảng.
+- Kiểm thử bố cục: golden test cho từng breakpoint (390×844, 820×1180, 1280×800, 1728×1117).
 
 ## 3. Provider matrix
 | | Gmail | Outlook.com / M365 | iCloud |

@@ -1,0 +1,99 @@
+import 'dart:convert';
+
+import 'package:ai_smart_mail/core/database/app_database.dart';
+import 'package:ai_smart_mail/core/domain/enums.dart';
+import 'package:ai_smart_mail/core/mail/demo_mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/google_token_refresher.dart';
+import 'package:ai_smart_mail/core/mail/imap_mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/oauth_tokens.dart';
+import 'package:ai_smart_mail/core/storage/credentials_store.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'mail_provider_factory.g.dart';
+
+/// Builds the right [MailProvider] for an account (TECH_SPEC §2: one adapter
+/// per account). `authKind == none` (or `provider == demo`) always resolves
+/// to [DemoMailProvider] so "Dùng thử với hộp thư mẫu" runs through the same
+/// sync/classify pipeline as a real account.
+class MailProviderFactory {
+  MailProviderFactory(this._credentials, this._googleTokenRefresher);
+
+  final CredentialsStore _credentials;
+  final GoogleTokenRefresher _googleTokenRefresher;
+
+  /// Demo "servers" live only in memory, so the same instance must be reused
+  /// across sync + action-executor calls for an account — otherwise every
+  /// call would regenerate a fresh mailbox and silently undo prior moves.
+  final Map<String, DemoMailProvider> _demoCache = {};
+
+  Future<MailProvider> create(AccountRow account) async {
+    if (account.provider == MailProviderType.demo ||
+        account.authKind == AuthKind.none) {
+      return _demoCache.putIfAbsent(
+        account.id,
+        () => DemoMailProvider(
+          accountId: account.id,
+          providerType: account.provider,
+          selfEmail: account.email,
+        ),
+      );
+    }
+
+    final isGmail = account.provider == MailProviderType.gmail;
+
+    if (account.authKind == AuthKind.oauth) {
+      final raw = await _credentials.readOAuthTokens(account.id);
+      if (raw == null) {
+        throw const MailFailure.authentication(
+          'Thiếu thông tin đăng nhập, vui lòng kết nối lại tài khoản.',
+        );
+      }
+      var tokens = OAuthTokens.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
+      if (isGmail) {
+        // Refreshes (and persists) a new access token when this one is
+        // within 5 min of expiring; throws + marks the account `error` on
+        // `invalid_grant` so Settings › Tài khoản can offer "Đăng nhập lại".
+        tokens = await _googleTokenRefresher.ensureFreshTokens(
+          account.id,
+          tokens,
+        );
+      } else if (tokens.isExpired) {
+        // Outlook: no refresh-token exchange yet — an expired access token
+        // surfaces as an auth failure asking the user to reconnect.
+        throw const MailFailure.authentication(
+          'Phiên đăng nhập đã hết hạn, vui lòng kết nối lại tài khoản.',
+        );
+      }
+      return ImapMailProvider(
+        host: account.imapHost,
+        port: account.imapPort,
+        email: account.email,
+        oauthAccessToken: tokens.accessToken,
+        isGmail: isGmail,
+      );
+    }
+
+    final password = await _credentials.readPassword(account.id);
+    if (password == null) {
+      throw const MailFailure.authentication(
+        'Thiếu mật khẩu, vui lòng kết nối lại tài khoản.',
+      );
+    }
+    return ImapMailProvider(
+      host: account.imapHost,
+      port: account.imapPort,
+      email: account.email,
+      password: password,
+      isGmail: isGmail,
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+MailProviderFactory mailProviderFactory(Ref ref) => MailProviderFactory(
+  ref.watch(credentialsStoreProvider),
+  ref.watch(googleTokenRefresherProvider),
+);

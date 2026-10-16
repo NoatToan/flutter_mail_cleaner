@@ -1,0 +1,26 @@
+{
+  "tags": {
+    "title": "Tags",
+    "section_system": "Tự động bởi AI",
+    "section_custom": "Tag của bạn",
+    "no_system_tags": "Chưa có tag hệ thống",
+    "no_custom_tags": "Chưa có tag nào",
+    "no_custom_tags_message": "Tạo tag bằng lời ở bên phải để bắt đầu",
+    "protected": "Được bảo vệ",
+    "new_tag": "Tạo tag mới",
+    "create_by_words": "Tạo tag bằng lời",
+    "description_label": "Mô tả loại mail bạn muốn gom",
+    "description_hint": "Ví dụ: Hoá đơn điện, nước, internet hằng tháng",
+    "matched_count": "Khớp {} mail",
+    "create_button": "Tạo tag \"{}\"",
+    "created_toast": "Đã tạo tag \"{}\"",
+    "on_device_note": "Tag tự tạo chạy hoàn toàn trên máy, không gửi nội dung mail ra ngoài. AI học thêm mỗi khi bạn sửa tag thủ công.",
+    "edit_title": "Sửa tag",
+    "name_label": "Tên tag",
+    "color_label": "Màu",
+    "protected_toggle": "Được bảo vệ (không bao giờ tự xoá)",
+    "delete": "Xoá",
+    "delete_confirm_title": "Xoá tag này?",
+    "delete_confirm_body": "\"{}\" sẽ bị xoá khỏi mọi mail đang gắn tag. Hành động này không ảnh hưởng đến mail."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "catch_up": {
+    "title": "Catch up",
+    "no_senders": "Nothing to catch up on",
+    "no_senders_message": "Unread newsletters will show up here",
+    "all_caught_up": "All caught up!",
+    "unread_issues": "{} unread issues",
+    "no_summary_yet": "No content to summarize yet",
+    "loading_content": "Loading content…",
+    "topic_heading": "{title} · {count} posts",
+    "topic_other": "Other",
+    "issue_chip_generic": "Open mail",
+    "mark_all_read": "Mark all {} issues as read",
+    "archive": "Archive",
+    "archive_label": "Archive newsletter {}",
+    "unsubscribe": "Unsubscribe",
+    "unsubscribe_requested": "Unsubscribe request sent"
+  }
+}

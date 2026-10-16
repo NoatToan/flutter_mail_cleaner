@@ -1,0 +1,13 @@
+{
+  "common": {
+    "coming_soon": "Đang hoàn thiện",
+    "retry": "Thử lại",
+    "cancel": "Huỷ",
+    "done": "Xong",
+    "undo": "Hoàn tác",
+    "back": "Quay lại",
+    "error_generic": "Có lỗi xảy ra. Vui lòng thử lại.",
+    "loading": "Đang tải…",
+    "on_device": "Trên máy"
+  }
+}

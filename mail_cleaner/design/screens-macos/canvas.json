@@ -1,0 +1,135 @@
+{
+"v": 3,
+"title": "AI Smart Mail — macOS App Design",
+"launch": {
+"view": "focused",
+"file": "Inbox.dc.html"
+},
+"pages": [],
+"boards": {
+"Main.dc.html": {
+"x": 0,
+"y": 0,
+"w": 1360,
+"h": 860,
+"title": "Tổng quan"
+},
+"Inbox.dc.html": {
+"x": 1480,
+"y": 0,
+"w": 1360,
+"h": 860,
+"title": "Hộp thư đến (trang chủ)"
+},
+"MailDetail.dc.html": {
+"x": 2960,
+"y": 0,
+"w": 1360,
+"h": 860,
+"title": "Đọc mail"
+},
+"Mailboxes.dc.html": {
+"x": 4440,
+"y": 0,
+"w": 1360,
+"h": 860,
+"title": "Quản lý hộp thư"
+},
+"Senders.dc.html": {
+"x": 0,
+"y": 1120,
+"w": 1360,
+"h": 860,
+"title": "Người gửi"
+},
+"SwipeReview.dc.html": {
+"x": 1480,
+"y": 1120,
+"w": 1360,
+"h": 860,
+"title": "Duyệt người gửi"
+},
+"Tags.dc.html": {
+"x": 2960,
+"y": 1120,
+"w": 1360,
+"h": 860,
+"title": "Tags"
+},
+"CatchUp.dc.html": {
+"x": 4440,
+"y": 1120,
+"w": 1360,
+"h": 860,
+"title": "Bắt kịp"
+},
+"ScanReview.dc.html": {
+"x": 0,
+"y": 2240,
+"w": 1360,
+"h": 860,
+"title": "Smart Scan – Kết quả"
+},
+"AICommand.dc.html": {
+"x": 1480,
+"y": 2240,
+"w": 1360,
+"h": 860,
+"title": "Lệnh AI"
+},
+"Settings.dc.html": {
+"x": 2960,
+"y": 2240,
+"w": 720,
+"h": 620,
+"title": "Cài đặt"
+},
+"Welcome.dc.html": {
+"x": 0,
+"y": 3360,
+"w": 680,
+"h": 540,
+"title": "Chào mừng"
+},
+"AddAccount.dc.html": {
+"x": 800,
+"y": 3360,
+"w": 680,
+"h": 540,
+"title": "Thêm tài khoản"
+},
+"Scanning.dc.html": {
+"x": 1600,
+"y": 3360,
+"w": 680,
+"h": 540,
+"title": "Đang quét"
+},
+"CleanDone.dc.html": {
+"x": 2400,
+"y": 3360,
+"w": 680,
+"h": 540,
+"title": "Dọn xong"
+}
+},
+"order": [
+"Welcome.dc.html",
+"AddAccount.dc.html",
+"Scanning.dc.html",
+"ScanReview.dc.html",
+"CleanDone.dc.html",
+"Main.dc.html",
+"Inbox.dc.html",
+"MailDetail.dc.html",
+"Mailboxes.dc.html",
+"Senders.dc.html",
+"SwipeReview.dc.html",
+"Tags.dc.html",
+"CatchUp.dc.html",
+"AICommand.dc.html",
+"Settings.dc.html"
+],
+"notes": {},
+"designSystems": []
+}
