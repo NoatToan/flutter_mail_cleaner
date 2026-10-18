@@ -200,25 +200,3 @@ class AiTransparencyLog extends Table {
   IntColumn get bytesSent => integer()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
-
-/// REST transports (Gmail API, Microsoft Graph) identify messages by string
-/// ids, but the rest of the app works on IMAP-style integer uids. This maps
-/// each remote id to a uid allocated per (account, folder) in discovery
-/// order, so `afterUid` incremental sync and move uid maps keep working the
-/// same way they do over IMAP.
-@DataClassName('RemoteMessageIdRow')
-class RemoteMessageIds extends Table {
-  TextColumn get accountId =>
-      text().references(Accounts, #id, onDelete: KeyAction.cascade)();
-  TextColumn get folderPath => text()();
-  IntColumn get uid => integer()();
-  TextColumn get remoteId => text()();
-
-  @override
-  Set<Column<Object>> get primaryKey => {accountId, folderPath, uid};
-
-  @override
-  List<Set<Column<Object>>> get uniqueKeys => [
-    {accountId, folderPath, remoteId},
-  ];
-}

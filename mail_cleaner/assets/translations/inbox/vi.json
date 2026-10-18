@@ -66,6 +66,17 @@
     "sort_oldest": "Cũ nhất",
     "sort_unread_first": "Chưa đọc lên trước",
     "sort_sender": "Người gửi A–Z",
-    "sort_largest": "Dung lượng lớn nhất"
+    "sort_largest": "Dung lượng lớn nhất",
+    "compose_title": "Soạn thư",
+    "compose_from": "Từ",
+    "compose_to": "Đến",
+    "compose_subject": "Tiêu đề",
+    "compose_body_hint": "Nội dung thư…",
+    "compose_send": "Gửi",
+    "compose_sent": "Đã gửi thư",
+    "compose_required": "Bắt buộc",
+    "compose_invalid_email": "Nhập địa chỉ email, cách nhau bằng dấu phẩy",
+    "compose_no_account": "Cần kết nối hộp thư thật để gửi mail (hộp thư mẫu không gửi được).",
+    "compose_quote_header": "{} đã viết:"
   }
 }

@@ -87,7 +87,7 @@ final class InboxSortSettingProvider
   }
 }
 
-String _$inboxSortSettingHash() => r'b4fe96b6e1f6a3221bd23099c7a3d58d9c1c8d34';
+String _$inboxSortSettingHash() => r'c575d4f72c84366dd9172b652e68d335eb54012d';
 
 /// The list pane's sort order — survives a restart (PersistedState).
 

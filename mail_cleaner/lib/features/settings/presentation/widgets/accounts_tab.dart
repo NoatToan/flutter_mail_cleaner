@@ -11,6 +11,7 @@ import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
 import 'package:ai_smart_mail/features/settings/data/accounts_repository.dart';
 import 'package:ai_smart_mail/features/settings/presentation/providers/settings_providers.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -94,13 +95,21 @@ class _AccountTile extends ConsumerWidget {
   final SettingsAccount account;
   final VoidCallback onRemove;
 
-  /// Gmail OAuth (desktop, `GoogleTokenRefresher`) and every web REST
-  /// account (`WebOAuthTokenRefresher`) can re-authorise in place; other
+  /// Gmail OAuth (desktop, `GoogleTokenRefresher`) and web Gmail/Outlook
+  /// OAuth accounts (`WebOAuthTokenRefresher`) can re-authorise in place; other
   /// errors still need the user to remove and re-add the account.
   bool get _canReauth =>
-      _isWebAccount || account.provider == MailProviderType.gmail;
+      _isWebAccount ||
+      (!kIsWeb &&
+          account.provider == MailProviderType.gmail &&
+          account.authKind == AuthKind.oauth);
 
-  bool get _isWebAccount => account.authKind == AuthKind.oauthApi;
+  /// Web OAuth accounts (Gmail/Outlook) re-run the browser sign-in.
+  bool get _isWebAccount =>
+      kIsWeb &&
+      (account.authKind == AuthKind.oauth ||
+          account.authKind == AuthKind.oauthApi) &&
+      WebOAuthProvider.of(account.provider) != null;
 
   /// Web accounts re-run the browser sign-in; it comes back through
   /// `/onboarding/oauth-callback`, which only replaces this account's tokens.

@@ -56,18 +56,33 @@ module.exports = async (req, res) => {
       body: form,
     });
     const json = safeJson(await upstream.text()) || { error: 'invalid_response' };
-    const { access_token, expires_in, refresh_token, error, error_description } = json;
+    const { access_token, expires_in, refresh_token, id_token, error, error_description } = json;
     if (!upstream.ok || !access_token) {
       return res
         .status(upstream.ok ? 502 : upstream.status)
         .json({ error: error || 'token_error', error_description });
     }
-    // Only what the app needs: no id_token or scope echo.
-    return res.status(200).json({ access_token, expires_in, refresh_token });
+    // Only what the app needs: the mailbox address (IMAP/SMTP log in with
+    // it) instead of the whole id_token, and no scope echo.
+    return res
+      .status(200)
+      .json({ access_token, expires_in, refresh_token, email: emailFromIdToken(id_token) });
   } catch (e) {
     return res.status(502).json({ error: 'network_error', error_description: String(e) });
   }
 };
+
+/**
+ * Mailbox address from the id_token we just received straight from the
+ * provider's token endpoint over TLS (so no signature check is needed).
+ * Google: `email`; Microsoft personal/work: `email` or `preferred_username`.
+ */
+function emailFromIdToken(idToken) {
+  if (typeof idToken !== 'string') return null;
+  const payload = safeJson(Buffer.from(idToken.split('.')[1] || '', 'base64url').toString('utf8'));
+  const email = payload && (payload.email || payload.preferred_username);
+  return typeof email === 'string' && email.includes('@') ? email.toLowerCase() : null;
+}
 
 function safeJson(text) {
   try {

@@ -19,7 +19,6 @@ part 'app_database.g.dart';
     LabelsTraining,
     SummariesCache,
     AiTransparencyLog,
-    RemoteMessageIds,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -41,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -66,8 +65,11 @@ class AppDatabase extends _$AppDatabase {
       await _seedSystemTags();
     },
     onUpgrade: (m, from, to) async {
-      // v2: uid ↔ remote id map for the Gmail API / Graph transports.
-      if (from < 2) await m.createTable(remoteMessageIds);
+      // v2 added a uid ↔ remote-id map for the Gmail API / Graph transports;
+      // v3 dropped those transports (the web uses IMAP via /api/mail).
+      if (from == 2) {
+        await customStatement('DROP TABLE IF EXISTS remote_message_ids');
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

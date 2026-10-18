@@ -35,7 +35,7 @@ void main() {
   });
 
   group('WebOAuthClient', () {
-    test('Google authorize URL: PKCE, offline access, gmail.modify', () {
+    test('Google authorize URL: PKCE, offline access, IMAP scope', () {
       final pending = client.begin(WebOAuthProvider.google);
       final url = client.authorizeUrl(pending, config);
 
@@ -46,10 +46,11 @@ void main() {
       expect(q['code_challenge_method'], 'S256');
       expect(q['state'], pending.state);
       expect(q['access_type'], 'offline');
-      expect(q['scope'], contains('gmail.modify'));
+      expect(q['scope'], contains('https://mail.google.com/'));
+      expect(q['scope'], contains('email'));
     });
 
-    test('Microsoft authorize URL uses the tenant and Mail.ReadWrite', () {
+    test('Microsoft authorize URL uses the tenant and IMAP/SMTP scopes', () {
       final url = client.authorizeUrl(
         client.begin(WebOAuthProvider.microsoft),
         config,
@@ -57,7 +58,8 @@ void main() {
       );
 
       expect(url.path, '/consumers/oauth2/v2.0/authorize');
-      expect(url.queryParameters['scope'], contains('Mail.ReadWrite'));
+      expect(url.queryParameters['scope'], contains('IMAP.AccessAsUser.All'));
+      expect(url.queryParameters['scope'], contains('SMTP.Send'));
       expect(url.queryParameters['scope'], contains('offline_access'));
       expect(url.queryParameters['login_hint'], 'me@outlook.com');
     });
@@ -70,14 +72,16 @@ void main() {
           'access_token': 'at',
           'refresh_token': 'rt',
           'expires_in': 3600,
+          'email': 'me@gmail.com',
         }),
       );
       final pending = client.begin(WebOAuthProvider.google);
 
-      final tokens = await client.exchangeCode(pending, 'the-code');
+      final grant = await client.exchangeCode(pending, 'the-code');
 
-      expect(tokens.accessToken, 'at');
-      expect(tokens.refreshToken, 'rt');
+      expect(grant.tokens.accessToken, 'at');
+      expect(grant.tokens.refreshToken, 'rt');
+      expect(grant.email, 'me@gmail.com');
       final body = http.requests.single.body! as Map<String, dynamic>;
       expect(body['provider'], 'google');
       expect(body['code'], 'the-code');
@@ -131,7 +135,6 @@ void main() {
       flow = WebOAuthFlow(
         client: client,
         credentials: credentials,
-        dio: fakeDio(http),
         openUrl: (uri) async {
           opened = uri;
           return true;
@@ -157,32 +160,33 @@ void main() {
       expect(opened, isNull);
     });
 
-    test('complete exchanges the code and reads the Gmail address', () async {
-      await flow.start(WebOAuthProvider.google, config);
-      final state = opened!.queryParameters['state'];
-      http
-        ..on(
+    test(
+      'complete exchanges the code and takes the id_token address',
+      () async {
+        await flow.start(WebOAuthProvider.google, config);
+        final state = opened!.queryParameters['state'];
+        http.on(
           'POST',
           '/api/oauth-token',
-          (_) => reply({'access_token': 'at', 'refresh_token': 'rt'}),
-        )
-        ..on(
-          'GET',
-          '/gmail/v1/users/me/profile',
-          (_) => reply({'emailAddress': 'Me@Gmail.com'}),
+          (_) => reply({
+            'access_token': 'at',
+            'refresh_token': 'rt',
+            'email': 'me@gmail.com',
+          }),
         );
 
-      final result = await flow.complete(
-        origin.replace(
-          path: '/onboarding/oauth-callback',
-          queryParameters: {'code': 'c', 'state': state},
-        ),
-      );
+        final result = await flow.complete(
+          origin.replace(
+            path: '/onboarding/oauth-callback',
+            queryParameters: {'code': 'c', 'state': state},
+          ),
+        );
 
-      expect(result.email, 'me@gmail.com');
-      expect(result.tokens.refreshToken, 'rt');
-      expect(await credentials.readPendingOAuth(), isNull);
-    });
+        expect(result.email, 'me@gmail.com');
+        expect(result.tokens.refreshToken, 'rt');
+        expect(await credentials.readPendingOAuth(), isNull);
+      },
+    );
 
     test('complete rejects a mismatched state', () async {
       await flow.start(WebOAuthProvider.google, config);

@@ -42,7 +42,7 @@ final class AddAccountControllerProvider
 }
 
 String _$addAccountControllerHash() =>
-    r'7d65cc4bdc5d48d5594cb072cdab6e18bc201300';
+    r'bbeabc3e0a311dda26562da911556264a0abe60e';
 
 abstract class _$AddAccountController extends $Notifier<AddAccountState> {
   AddAccountState build();

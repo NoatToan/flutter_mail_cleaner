@@ -1,90 +1,103 @@
-# Bản web: kết nối Gmail và Outlook (Gmail API + Microsoft Graph)
+# Bản web: kết nối hộp thư qua IMAP/SMTP
 
-Trình duyệt không mở được socket IMAP, nên bản web (Vercel) đồng bộ mail qua REST API của từng nhà
-cung cấp:
+Bản web dùng **đúng IMAP (đọc, dọn) và SMTP (gửi)** như app macOS, cho mọi nhà cung cấp: Gmail,
+Outlook/Microsoft 365, iCloud và mọi máy chủ IMAP. Không dùng Gmail API hay Microsoft Graph.
 
-| Hộp thư | Transport | Scope |
-| --- | --- | --- |
-| Gmail | Gmail API (`lib/core/mail/gmail_api_mail_provider.dart`) | `https://www.googleapis.com/auth/gmail.modify` |
-| Outlook.com / Microsoft 365 | Microsoft Graph (`lib/core/mail/graph_mail_provider.dart`) | `offline_access User.Read Mail.ReadWrite` |
+Trình duyệt không mở được socket IMAP/SMTP, nên mỗi thao tác đi qua function **`/api/mail`**
+(`api/mail.js` + `api/_mail/bridge.js`, Node, dùng `imapflow` và `nodemailer`):
 
-Luồng đăng nhập: authorization code + PKCE, **chuyển cả trang** sang Google/Microsoft rồi quay về
-`/onboarding/oauth-callback` (không dùng popup vì header COOP `same-origin` mà drift web cần sẽ chặn
-popup). Đổi code lấy token và refresh token đi qua function `api/oauth-token.js` của chính
-deployment: function chỉ thêm client secret rồi chuyển tiếp, không lưu gì. Token được lưu trong
-trình duyệt (flutter_secure_storage, mã hoá bằng WebCrypto). Nội dung mail không đi qua server.
+- Không lưu trạng thái. Mỗi request mở một phiên IMAP hoặc SMTP, làm một việc, rồi đóng.
+- Thông tin đăng nhập (app password hoặc OAuth access token) gửi kèm từng request qua HTTPS, chỉ
+  dùng cho phiên đó, **không lưu và không ghi log**. Trong app, chúng được lưu trong trình duyệt
+  (flutter_secure_storage).
+- Đọc luôn dùng `BODY.PEEK`, nên không làm mất trạng thái chưa đọc.
+- Chỉ nhận request cùng origin. Chỉ kết nối tới máy chủ có địa chỉ công khai, cổng IMAP 993/143
+  và SMTP 465/587, để function không bị dùng để dò mạng nội bộ.
+- Thao tác: `verify`, `folders`, `headers` (phân trang, đồng bộ tăng dần theo UID), `body`,
+  `move`, `seen`, `quota`, `send`.
 
-Tài khoản web có `authKind = oauthApi`. Uid kiểu IMAP được cấp cho từng (tài khoản, thư mục) trong
-bảng `remote_message_ids`, nên sync engine, action executor, undo… chạy y như với IMAP.
+Phía app: `BridgeMailProvider` (đọc/dọn) và `MailSender` (gửi). Trên macOS, `MailSender` gửi
+SMTP trực tiếp bằng enough_mail.
+
+## Cách người dùng kết nối
+
+| Hộp thư | Đăng nhập | IMAP | SMTP |
+| --- | --- | --- | --- |
+| Gmail | Google (OAuth, XOAUTH2) hoặc app password | imap.gmail.com:993 | smtp.gmail.com:465 |
+| Outlook / Microsoft 365 | Microsoft (OAuth, XOAUTH2) | outlook.office365.com:993 | smtp.office365.com:587 |
+| iCloud | App password | imap.mail.me.com:993 | smtp.mail.me.com:587 |
+| IMAP khác | Mật khẩu / app password | tự nhập | `smtp.<domain>`:465 |
+
+Đăng nhập Google/Microsoft là chuyển cả trang sang nhà cung cấp rồi quay về
+`/onboarding/oauth-callback` (authorization code + PKCE). Đổi code lấy token và refresh token đi
+qua `api/oauth-token.js`: function này giữ client secret, và chỉ trả địa chỉ email lấy từ
+`id_token` cho app, không trả cả `id_token`. Trước khi lưu tài khoản, app luôn thử đăng nhập IMAP
+thật.
 
 ## Biến môi trường trên Vercel
 
-Vercel → project `flutter-mail-cleaner` → **Settings › Environment Variables** (Production + Preview):
+Vercel → project → **Settings › Environment Variables** (Production + Preview), xong thì
+**Redeploy**:
 
 | Biến | Giá trị |
 | --- | --- |
-| `GOOGLE_WEB_CLIENT_ID` | Client ID của OAuth client loại **Web application** (mục 1) |
+| `GOOGLE_WEB_CLIENT_ID` | Client ID của OAuth client loại **Web application** |
 | `GOOGLE_WEB_CLIENT_SECRET` | Client secret tương ứng |
-| `MICROSOFT_CLIENT_ID` | Application (client) ID của app registration (mục 2) |
-| `MICROSOFT_CLIENT_SECRET` | Client secret (Value, không phải Secret ID) |
-| `MICROSOFT_TENANT` | Tuỳ chọn. `common` (mặc định: cả tài khoản cá nhân và công ty), `consumers` hoặc tenant ID |
+| `MICROSOFT_CLIENT_ID` | Application (client) ID của app registration |
+| `MICROSOFT_CLIENT_SECRET` | Client secret (lấy **Value**, không phải Secret ID) |
+| `MICROSOFT_TENANT` | Không bắt buộc. Mặc định `common`; có thể đặt `consumers` hoặc tenant ID |
 
-Đổi biến xong phải **Redeploy** để function nhận giá trị mới. Kiểm tra:
-`curl https://flutter-mail-cleaner.vercel.app/api/oauth-config` phải trả về client ID (không bao giờ
-trả secret). Provider nào thiếu ID hoặc secret thì trả `null` và nút đăng nhập bị tắt.
+iCloud và IMAP khác không cần biến nào. Thiếu biến của Google/Microsoft thì nút đăng nhập tương
+ứng hiện "chưa được cấu hình", nhưng Gmail vẫn kết nối được bằng app password.
 
-Không đưa secret vào repo (repo public).
+Kiểm tra: `curl https://<domain>/api/oauth-config` phải trả client ID và không bao giờ trả secret.
 
-## 1. Google Cloud (Gmail)
+## 1. Google Cloud (Gmail qua IMAP)
 
-Có thể dùng chung project với bản macOS (docs/OAUTH_GOOGLE.md), nhưng cần **một OAuth client mới**.
+1. **OAuth consent screen**: thêm các scope `openid`, `email`, `https://mail.google.com/`. Thêm
+   **Authorized domain** (`vercel.app` hoặc domain riêng).
+2. **Credentials › OAuth client ID › Web application**:
+   - Authorized JavaScript origins: `https://fluttermailcleaner.vercel.app`
+   - Authorized redirect URIs: `https://fluttermailcleaner.vercel.app/onboarding/oauth-callback`
+   - Mỗi domain khác (domain riêng, preview) cần thêm một cặp origin/redirect; Google không nhận
+     wildcard.
+3. Copy client ID/secret vào `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_WEB_CLIENT_SECRET`.
 
-1. **APIs & Services › Library** → bật **Gmail API**.
-2. **OAuth consent screen**: thêm scope `https://www.googleapis.com/auth/gmail.modify`. Thêm
-   **Authorized domain** `vercel.app` (hoặc domain riêng nếu có).
-3. **Credentials › Create credentials › OAuth client ID** → loại **Web application**:
-   - Authorized JavaScript origins: `https://flutter-mail-cleaner.vercel.app`
-   - Authorized redirect URIs: `https://flutter-mail-cleaner.vercel.app/onboarding/oauth-callback`
-   - Domain riêng hay preview URL thì thêm cặp origin/redirect tương ứng (Google không nhận wildcard).
-4. Copy Client ID/Client secret vào `GOOGLE_WEB_CLIENT_ID` / `GOOGLE_WEB_CLIENT_SECRET`.
+Production: `https://mail.google.com/` là **restricted scope**. Ở chế độ Testing, chỉ email trong
+danh sách Test users đăng nhập được, và refresh token hết hạn sau 7 ngày (app sẽ hiện "Đăng nhập
+lại"). Muốn mở cho mọi người phải Publish app và qua xác minh của Google (CASA), mất vài tuần.
+Trong lúc chờ, người dùng Gmail vẫn kết nối được bằng **app password** (cần bật xác minh 2 bước).
 
-Lưu ý khi chạy production:
-
-- Ở trạng thái **Testing**, chỉ email trong **Test users** đăng nhập được, và refresh token **hết hạn
-  sau 7 ngày** (app sẽ báo lỗi và hiện "Đăng nhập lại" trong Cài đặt › Tài khoản).
-- `gmail.modify` là **restricted scope**: muốn mở cho mọi người phải **Publish app** và qua
-  **xác minh của Google** (CASA security assessment). Việc này mất vài tuần, nên nộp sớm. Cần có
-  trang chủ, Privacy Policy, Terms trên domain đã xác minh và video demo luồng dùng scope.
-
-## 2. Microsoft Entra ID (Outlook / Microsoft 365)
+## 2. Microsoft Entra ID (Outlook / Microsoft 365 qua IMAP)
 
 1. https://entra.microsoft.com → **App registrations › New registration**:
    - Supported account types: **Accounts in any organizational directory and personal Microsoft
-     accounts** (khớp `MICROSOFT_TENANT=common`).
-   - Redirect URI: platform **Web** (không chọn SPA), giá trị
-     `https://flutter-mail-cleaner.vercel.app/onboarding/oauth-callback`.
-2. **Certificates & secrets › New client secret** → copy **Value** vào `MICROSOFT_CLIENT_SECRET`
-   (secret có hạn, tối đa 24 tháng; nhớ gia hạn).
-3. **API permissions › Add › Microsoft Graph › Delegated**: `offline_access`, `User.Read`,
-   `Mail.ReadWrite`. Không cần admin consent cho tài khoản cá nhân. Tenant công ty có chặn user
-   consent thì admin phải **Grant admin consent**.
-4. **Overview** → copy Application (client) ID vào `MICROSOFT_CLIENT_ID`.
-5. Production: **Branding & properties** → điền publisher domain (verified publisher) để màn consent
-   không hiện cảnh báo "unverified".
+     accounts**.
+   - Redirect URI: platform **Web** (không chọn SPA),
+     `https://fluttermailcleaner.vercel.app/onboarding/oauth-callback`.
+2. **Certificates & secrets › New client secret**: copy **Value** vào `MICROSOFT_CLIENT_SECRET`.
+   Secret có hạn, tối đa 24 tháng, nhớ gia hạn.
+3. **API permissions › Add a permission**:
+   - Microsoft Graph › Delegated: `openid`, `email`, `offline_access`.
+   - **APIs my organization uses › Office 365 Exchange Online** › Delegated: `IMAP.AccessAsUser.All`,
+     `SMTP.Send`.
+4. Với tenant Microsoft 365, admin phải bật **SMTP AUTH** cho mailbox (Exchange admin center ›
+   Mailbox › Manage email apps › Authenticated SMTP) và cấp admin consent nếu tenant chặn user
+   consent. Tài khoản Outlook.com cá nhân không cần bước này.
 
-## Chạy thử
+## Chạy thử ở máy
 
-- Sau khi đặt biến và redeploy: mở bản web → **Kết nối hộp thư** → **Đăng nhập với Google** hoặc
-  **Đăng nhập bằng Microsoft** → đồng ý → app quay về, đồng bộ và chuyển sang màn quét.
-- Chạy local (`flutter run -d chrome`) không có function `/api`, nên nút đăng nhập bị tắt. Muốn thử
-  OAuth thật ở local thì dùng `vercel dev` ở root repo, và thêm redirect URI
-  `http://localhost:3000/onboarding/oauth-callback` vào client.
+- Bridge: `pnpm install && pnpm test` ở root repo. Muốn chạy cả test tích hợp với một máy chủ
+  IMAP/SMTP thật ở máy (ví dụ GreenMail standalone trên 3993/3465, user `tester@localhost` /
+  `pw123`), thêm `MAIL_BRIDGE_IT=1 MAIL_BRIDGE_ALLOW_PRIVATE=1`. Biến
+  `MAIL_BRIDGE_ALLOW_PRIVATE` chỉ dùng khi test ở máy, **không bao giờ** đặt trên Vercel.
+- App: `vercel dev` ở root repo chạy cả bản web lẫn các function `/api`. `flutter run -d chrome`
+  không có `/api`, nên không kết nối được hộp thư thật.
 
 ## Giới hạn hiện tại
 
-- Không có số liệu dung lượng hộp thư (Gmail API / Graph không trả quota với các scope này).
-- Gmail: "Lưu trữ" là thư mục ảo (mail không có nhãn INBOX/SENT/DRAFT/SPAM/TRASH); lưu trữ = bỏ nhãn
-  INBOX, giống web Gmail.
-- Outlook: chỉ thư mục cấp cao nhất được liệt kê.
-- Lần đồng bộ đầu của Gmail gọi một request cho mỗi mail (giới hạn 8 request song song, tự chờ khi
-  bị 429). Hộp thư rất lớn sẽ mất một lúc.
+- Mỗi thao tác là một phiên IMAP mới, nên chậm hơn app macOS. Đồng bộ lần đầu tải 200 header mỗi
+  lần gọi.
+- Gửi mail chỉ hỗ trợ văn bản thuần, chưa có file đính kèm. Gmail và Outlook tự lưu thư đã gửi
+  vào Sent; iCloud và máy chủ IMAP khác thì chưa.
+- Gmail: giống bản macOS, "Lưu trữ" chưa chuyển mail sang All Mail.
