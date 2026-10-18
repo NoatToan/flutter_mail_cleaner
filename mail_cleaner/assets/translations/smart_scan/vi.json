@@ -15,10 +15,12 @@
       "description_with_senders": "{senders} · {count} mail",
       "senders_and_more": "{senders} và {more} nơi khác",
       "oldPromo": {
-        "title": "Promo cũ > 6 tháng"
+        "title": "Promo cũ > 6 tháng",
+        "description": "Khuyến mãi cũ hơn 6 tháng · {count} mail"
       },
       "unreadNewsletter": {
-        "title": "Newsletter bỏ đọc"
+        "title": "Newsletter bỏ đọc",
+        "description": "Bản tin chưa mở · {count} mail"
       },
       "expiredOtp": {
         "title": "OTP hết hạn",

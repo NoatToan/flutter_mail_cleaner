@@ -77,6 +77,9 @@
     "compose_required": "Bắt buộc",
     "compose_invalid_email": "Nhập địa chỉ email, cách nhau bằng dấu phẩy",
     "compose_no_account": "Cần kết nối hộp thư thật để gửi mail (hộp thư mẫu không gửi được).",
-    "compose_quote_header": "{} đã viết:"
+    "compose_quote_header": "{} đã viết:",
+    "more_actions": "Thêm thao tác",
+    "swipe_read": "Đã đọc",
+    "swipe_unread": "Chưa đọc"
   }
 }

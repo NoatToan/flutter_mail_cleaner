@@ -16,18 +16,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// List-pane header, Gmail-style: search pill, category tabs with unread
-/// counts, then one compact toolbar (select-all checkbox, unread count,
-/// account / tag / sort menus). Selecting mail swaps only the toolbar row
-/// for bulk actions, so the search and tabs never jump.
-class InboxListHeader extends StatelessWidget {
-  const InboxListHeader({
+/// Collapsible top of the list pane, Gmail-style: search pill + compose,
+/// then the category tabs with unread counts. The inbox puts it in a
+/// floating sliver, so it slides away while scrolling down the list and
+/// comes back on any scroll up.
+class InboxSearchHeader extends StatelessWidget {
+  const InboxSearchHeader({
     required this.accountId,
     required this.filter,
     required this.tagKey,
     required this.searchController,
     required this.onSearchChanged,
-    required this.loadedIds,
     super.key,
   });
 
@@ -36,7 +35,6 @@ class InboxListHeader extends StatelessWidget {
   final String? tagKey;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
-  final List<int> loadedIds;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +55,7 @@ class InboxListHeader extends StatelessWidget {
                 child: TextField(
                   controller: searchController,
                   onChanged: onSearchChanged,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, size: 18),
                     hintText: 'inbox.search_hint'.tr(),
@@ -86,6 +85,34 @@ class InboxListHeader extends StatelessWidget {
         ),
         _CategoryTabs(accountId: accountId, filter: filter, tagKey: tagKey),
         Divider(height: 1, color: tokens.divider),
+      ],
+    );
+  }
+}
+
+/// Pinned part of the list-pane header: select-all checkbox, unread count,
+/// account / tag / sort menus — swapped for bulk actions once mail is
+/// selected, so the search and tabs above never jump.
+class InboxListToolbar extends StatelessWidget {
+  const InboxListToolbar({
+    required this.accountId,
+    required this.filter,
+    required this.tagKey,
+    required this.loadedIds,
+    super.key,
+  });
+
+  final String? accountId;
+  final String? filter;
+  final String? tagKey;
+  final List<int> loadedIds;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         _Toolbar(
           accountId: accountId,
           filter: filter,
@@ -236,15 +263,18 @@ class _Tab extends StatelessWidget {
               if (count > 0) ...[
                 const SizedBox(width: AppSpace.xs),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  height: 16,
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 1,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 20),
                   decoration: BoxDecoration(
                     color: selected ? scheme.primary : tokens.subtleSurface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     count > 99 ? '99+' : '$count',
+                    textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: selected ? scheme.onPrimary : scheme.onSurface,
                       fontWeight: FontWeight.w700,
@@ -312,29 +342,50 @@ class _Toolbar extends ConsumerWidget {
                     ..._bulkActions(context, ref, tokens),
                   ],
                 )
-              : Row(
+              : LayoutBuilder(
                   key: const ValueKey('normal'),
-                  children: [
-                    checkbox,
-                    Expanded(
-                      // Counts are per category; hidden under a tag filter
-                      // where they wouldn't match the list.
-                      child: tagKey != null
-                          ? const SizedBox.shrink()
-                          : _UnreadLabel(accountId: accountId, filter: filter),
-                    ),
-                    _AccountMenu(
-                      accountId: accountId,
-                      filter: filter,
-                      tagKey: tagKey,
-                    ),
-                    _TagMenu(
-                      accountId: accountId,
-                      filter: filter,
-                      tagKey: tagKey,
-                    ),
-                    const _SortMenu(),
-                  ],
+                  builder: (context, constraints) => Row(
+                    children: [
+                      checkbox,
+                      Expanded(
+                        // Counts are per category; hidden under a tag filter
+                        // where they wouldn't match the list.
+                        child: tagKey != null
+                            ? const SizedBox.shrink()
+                            : _UnreadLabel(
+                                accountId: accountId,
+                                filter: filter,
+                              ),
+                      ),
+                      // Up to three active-filter chips can be wider than a
+                      // phone: they scroll sideways instead of overflowing.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth * 0.7,
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          reverse: true,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _AccountMenu(
+                                accountId: accountId,
+                                filter: filter,
+                                tagKey: tagKey,
+                              ),
+                              _TagMenu(
+                                accountId: accountId,
+                                filter: filter,
+                                tagKey: tagKey,
+                              ),
+                              const _SortMenu(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
         ),
       ),

@@ -77,6 +77,9 @@
     "compose_required": "Required",
     "compose_invalid_email": "Enter email addresses separated by commas",
     "compose_no_account": "Connect a real mailbox to send mail (the sample mailbox can't send).",
-    "compose_quote_header": "{} wrote:"
+    "compose_quote_header": "{} wrote:",
+    "more_actions": "More actions",
+    "swipe_read": "Read",
+    "swipe_unread": "Unread"
   }
 }

@@ -91,35 +91,55 @@ class _WebConnectPanelState extends ConsumerState<WebConnectPanel> {
           ? ConnectAttempt.google
           : ConnectAttempt.outlook;
       final busy = state.isConnecting && state.lastAttempt == attempt;
-      return ListTile(
-        leading: AccountBadge(provider: provider.mailProvider, size: 26),
-        title: Text(
-          provider == WebOAuthProvider.google
-              ? 'onboarding.provider_gmail'.tr()
-              : 'onboarding.provider_outlook'.tr(),
-        ),
-        subtitle: configured || config.isLoading
-            ? extra
+      final button = FilledButton(
+        onPressed: configured && !state.isConnecting
+            ? () => controller.connectWithWebOAuth(provider)
+            : null,
+        child: busy
+            ? const SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
             : Text(
-                'onboarding.web_provider_not_configured'.tr(),
-                style: TextStyle(color: tokens.review),
+                provider == WebOAuthProvider.google
+                    ? 'onboarding.connect_google_cta'.tr()
+                    : 'onboarding.connect_outlook_cta'.tr(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-        trailing: FilledButton(
-          onPressed: configured && !state.isConnecting
-              ? () => controller.connectWithWebOAuth(provider)
-              : null,
-          child: busy
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(
-                  provider == WebOAuthProvider.google
-                      ? 'onboarding.connect_google_cta'.tr()
-                      : 'onboarding.connect_outlook_cta'.tr(),
-                ),
-        ),
+      );
+      final status = configured || config.isLoading
+          ? extra
+          : Text(
+              'onboarding.web_provider_not_configured'.tr(),
+              style: TextStyle(color: tokens.review),
+            );
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          // On a phone a trailing sign-in button squeezed the title to a
+          // few letters per line — stack it under the text instead.
+          final stacked = constraints.maxWidth < 520;
+          return ListTile(
+            leading: AccountBadge(provider: provider.mailProvider, size: 26),
+            title: Text(
+              provider == WebOAuthProvider.google
+                  ? 'onboarding.provider_gmail'.tr()
+                  : 'onboarding.provider_outlook'.tr(),
+            ),
+            subtitle: stacked
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ?status,
+                      const SizedBox(height: AppSpace.sm),
+                      button,
+                    ],
+                  )
+                : status,
+            trailing: stacked ? null : button,
+          );
+        },
       );
     }
 

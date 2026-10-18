@@ -64,18 +64,25 @@ class _AccountStorageRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      storage.account.email,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium,
+                    // Expanded so a long address ellipsizes instead of
+                    // running into (and pushing out) the size label.
+                    Expanded(
+                      child: Text(
+                        storage.account.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ),
+                    const SizedBox(width: AppSpace.sm),
                     Text(
                       ratio != null
                           ? formatPercent(ratio)
                           : 'dashboard.storage.estimated'.tr(
-                              namedArgs: {'size': formatBytes(storage.usedBytes)},
+                              namedArgs: {
+                                'size': formatBytes(storage.usedBytes),
+                              },
                             ),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: barColor,

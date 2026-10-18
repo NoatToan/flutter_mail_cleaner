@@ -11,6 +11,7 @@ import 'package:ai_smart_mail/features/inbox/presentation/providers/inbox_provid
 import 'package:ai_smart_mail/features/inbox/presentation/providers/mail_selection_provider.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_bulk_actions.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -132,13 +133,27 @@ class _MailListTileState extends ConsumerState<MailListTile> {
         ? scheme.surface
         : tokens.subtleSurface.withValues(alpha: 0.45);
     final primaryText = unread ? scheme.onSurface : tokens.protected;
+    // The first line's box height, so the dot/checkbox column and the
+    // date/hover-actions slot line up with the sender at any text scale
+    // (fixed pixel heights clipped the mobile 15pt text).
+    final senderStyle = theme.textTheme.bodyLarge;
+    final firstLine =
+        (senderStyle?.fontSize ?? 13) * (senderStyle?.height ?? 1.4);
 
     return MenuAnchor(
       controller: _menuController,
       menuChildren: _buildMenuItems(context),
       child: MouseRegion(
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
+        // Mouse only: touch screens synthesize enter/exit around taps, which
+        // flashed the hover actions on phones.
+        onEnter: (e) {
+          if (e.kind == PointerDeviceKind.mouse) {
+            setState(() => _hovering = true);
+          }
+        },
+        onExit: (_) {
+          if (_hovering) setState(() => _hovering = false);
+        },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: _handleTapUp,
@@ -171,7 +186,7 @@ class _MailListTileState extends ConsumerState<MailListTile> {
               children: [
                 SizedBox(
                   width: 22,
-                  height: 20,
+                  height: firstLine,
                   child: Center(
                     child: showCheckbox
                         ? Checkbox(
@@ -194,17 +209,17 @@ class _MailListTileState extends ConsumerState<MailListTile> {
                   ),
                 ),
                 const SizedBox(width: AppSpace.xs),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: AccountBadge(provider: item.provider),
+                SizedBox(
+                  height: firstLine,
+                  child: Center(child: AccountBadge(provider: item.provider)),
                 ),
                 const SizedBox(width: AppSpace.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        height: 20,
+                      ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: firstLine),
                         child: Row(
                           children: [
                             Expanded(
@@ -212,7 +227,7 @@ class _MailListTileState extends ConsumerState<MailListTile> {
                                 senderLabel,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyLarge?.copyWith(
+                                style: senderStyle?.copyWith(
                                   color: primaryText,
                                   fontWeight: unread
                                       ? FontWeight.w700
@@ -430,21 +445,22 @@ class TagPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = AppPalette.tag(colorKey ?? 'gray');
+    // Sized by its label (no fixed height) so it never clips the text at
+    // the larger touch type scale; capped so a long tag name can't push
+    // the subject off the row.
     final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-      height: 16,
+      constraints: const BoxConstraints(maxWidth: 120),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.sm - 1),
       ),
-      // widthFactor keeps the pill hugging its label inside a Wrap.
-      child: Center(
-        widthFactor: 1,
-        child: Text(
-          name,
-          style: Theme.of(context).textTheme.labelSmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w600),
-        ),
+      child: Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: color, fontWeight: FontWeight.w600),
       ),
     );
     if (onTap == null) return pill;

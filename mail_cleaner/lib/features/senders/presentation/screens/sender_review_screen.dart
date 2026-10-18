@@ -1,4 +1,5 @@
 import 'package:ai_smart_mail/app/routes.dart';
+import 'package:ai_smart_mail/core/theme/app_theme.dart';
 import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
 import 'package:ai_smart_mail/features/dashboard/data/vi_format.dart';
@@ -215,13 +216,16 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
                   ),
                 ),
                 const SizedBox(height: AppSpace.lg),
-                Text(
-                  'senders.review.shortcuts'.tr(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: tokens.protected,
+                // Keyboard hints only where there is a keyboard.
+                if (AppTheme.isDesktop) ...[
+                  Text(
+                    'senders.review.shortcuts'.tr(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: tokens.protected,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpace.md),
+                  const SizedBox(height: AppSpace.md),
+                ],
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
