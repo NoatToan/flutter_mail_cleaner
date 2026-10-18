@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:ai_smart_mail/app/routes.dart';
-import 'package:ai_smart_mail/core/actions/mail_actions.dart';
 import 'package:ai_smart_mail/core/actions/mail_actions_provider.dart';
 import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
@@ -12,10 +11,10 @@ import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
 import 'package:ai_smart_mail/features/inbox/data/inbox_repository.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/inbox_providers.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/mail_selection_provider.dart';
+import 'package:ai_smart_mail/features/inbox/presentation/widgets/inbox_list_header.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_bulk_actions.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_detail_view.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_list_tile.dart';
-import 'package:ai_smart_mail/features/shell/presentation/providers/sidebar_providers.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,6 +50,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   double _listWidth = AppPane.list;
   String? _lastBatchId;
   final Set<int> _markedRead = {};
+  List<MessageListItem>? _lastItems;
 
   @override
   void initState() {
@@ -84,21 +84,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     super.dispose();
   }
 
+  InboxQuery get _query => inboxQuery(
+    accountIds: _accountIds,
+    categoryFilter: widget.filter,
+    tagKey: widget.tagKey,
+    search: _search,
+    sort: ref.read(inboxSortSettingProvider),
+  );
+
   void _onScroll() {
     if (_scrollController.position.pixels >
         _scrollController.position.maxScrollExtent - 200) {
-      ref
-          .read(
-            inboxPageSizeProvider(
-              inboxQuery(
-                accountIds: _accountIds,
-                categoryFilter: widget.filter,
-                tagKey: widget.tagKey,
-                search: _search,
-              ),
-            ).notifier,
-          )
-          .loadMore();
+      ref.read(inboxPageSizeProvider(_query).notifier).loadMore();
     }
   }
 
@@ -166,16 +163,15 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     final size = WindowSize.of(context);
-    final itemsAsync = ref.watch(
-      inboxMessagesProvider(
-        inboxQuery(
-          accountIds: _accountIds,
-          categoryFilter: widget.filter,
-          tagKey: widget.tagKey,
-          search: _search,
-        ),
-      ),
-    );
+    ref.watch(inboxSortSettingProvider);
+    var itemsAsync = ref.watch(inboxMessagesProvider(_query));
+    // Switching tab/filter/sort starts a new query: keep showing the previous
+    // rows until the new ones arrive instead of flashing a spinner.
+    if (itemsAsync.hasValue) {
+      _lastItems = itemsAsync.value;
+    } else if (itemsAsync.isLoading && _lastItems != null) {
+      itemsAsync = AsyncData(_lastItems!);
+    }
     final items = itemsAsync.value ?? const <MessageListItem>[];
 
     final body = CallbackShortcuts(
@@ -238,7 +234,6 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             scrollController: _scrollController,
             onSearchChanged: _setSearch,
             onSelect: (id) => context.go(_locationFor(messageId: id)),
-            locationFor: _locationFor,
           ),
         ),
         MouseRegion(
@@ -310,7 +305,6 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         scrollController: _scrollController,
         onSearchChanged: _setSearch,
         onSelect: (id) => context.go(_locationFor(messageId: id)),
-        locationFor: _locationFor,
       ),
     );
   }
@@ -369,7 +363,21 @@ class _ReadingPane extends ConsumerWidget {
           onBack: () {},
         ),
         const Divider(height: 1),
-        Expanded(child: MailDetailView(messageId: selectedMessageId!)),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 160),
+            switchInCurve: Curves.easeOut,
+            // Top-aligned (the default Stack centers the mail vertically).
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.topCenter,
+              children: [...previous, ?current],
+            ),
+            child: MailDetailView(
+              key: ValueKey(selectedMessageId),
+              messageId: selectedMessageId!,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -454,7 +462,6 @@ class _ListPane extends ConsumerWidget {
     required this.scrollController,
     required this.onSearchChanged,
     required this.onSelect,
-    required this.locationFor,
   });
 
   final List<String>? accountIds;
@@ -466,7 +473,6 @@ class _ListPane extends ConsumerWidget {
   final ScrollController scrollController;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<int> onSelect;
-  final String Function({int? messageId}) locationFor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -480,16 +486,15 @@ class _ListPane extends ConsumerWidget {
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          _ListHeader(
-            accountIds: accountIds,
+          InboxListHeader(
+            accountId: accountIds?.first,
             filter: filter,
             tagKey: tagKey,
             searchController: searchController,
             onSearchChanged: onSearchChanged,
-            locationFor: locationFor,
             loadedIds: [for (final m in items) m.id],
           ),
-          const SizedBox(height: AppSpace.sm),
+          if (filter == null && tagKey == null) _AiBanner(accountIds: accountIds),
           Expanded(
             child: itemsAsync.when(
               data: (items) => AppEmptyState(
@@ -517,352 +522,6 @@ class _ListPane extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Switches between the normal search/filter header and the bulk toolbar.
-/// This is the only part of the list pane that watches
-/// `mailSelectionProvider` — isolating that subscription here keeps a
-/// selection toggle from rebuilding the `ListView` below it.
-class _ListHeader extends ConsumerWidget {
-  const _ListHeader({
-    required this.accountIds,
-    required this.filter,
-    required this.tagKey,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.locationFor,
-    required this.loadedIds,
-  });
-
-  final List<String>? accountIds;
-  final String? filter;
-  final String? tagKey;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-  final String Function({int? messageId}) locationFor;
-  final List<int> loadedIds;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectionCount = ref.watch(
-      mailSelectionProvider.select((s) => s.length),
-    );
-    if (selectionCount > 0) {
-      return _BulkToolbar(count: selectionCount, loadedIds: loadedIds);
-    }
-    return _NormalHeader(
-      accountIds: accountIds,
-      filter: filter,
-      tagKey: tagKey,
-      searchController: searchController,
-      onSearchChanged: onSearchChanged,
-      locationFor: locationFor,
-    );
-  }
-}
-
-/// Replaces the search field + filter chips while the selection is
-/// non-empty: count, "Chọn tất cả", bulk actions, "Bỏ chọn" — all via
-/// [MailActions] in a single call per action (one Undo entry each).
-class _BulkToolbar extends ConsumerWidget {
-  const _BulkToolbar({required this.count, required this.loadedIds});
-
-  final int count;
-  final List<int> loadedIds;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = AppTokens.of(context);
-    List<int> selectedIds() => ref.read(mailSelectionProvider).toList();
-
-    return Container(
-      height: AppTheme.isDesktop ? AppPane.toolbarHeight : kToolbarHeight,
-      color: tokens.toolbar,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'inbox.selected_count'.tr(args: ['$count']),
-              style: Theme.of(context).textTheme.labelLarge,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          TextButton(
-            onPressed: () =>
-                ref.read(mailSelectionProvider.notifier).selectAll(loadedIds),
-            child: Text('inbox.select_all'.tr()),
-          ),
-          IconButton(
-            tooltip: 'inbox.archive'.tr(),
-            icon: const Icon(Icons.archive_outlined),
-            onPressed: () =>
-                unawaited(runMailArchive(context, ref, selectedIds())),
-          ),
-          IconButton(
-            tooltip: 'inbox.trash'.tr(),
-            icon: Icon(Icons.delete_outline, color: tokens.danger),
-            onPressed: () =>
-                unawaited(runMailTrash(context, ref, selectedIds())),
-          ),
-          IconButton(
-            tooltip: 'inbox.mark_read'.tr(),
-            icon: const Icon(Icons.mark_email_read_outlined),
-            onPressed: () => unawaited(
-              runMailMarkRead(context, ref, selectedIds(), read: true),
-            ),
-          ),
-          IconButton(
-            tooltip: 'inbox.mark_unread'.tr(),
-            icon: const Icon(Icons.mark_email_unread_outlined),
-            onPressed: () => unawaited(
-              runMailMarkRead(context, ref, selectedIds(), read: false),
-            ),
-          ),
-          IconButton(
-            tooltip: 'inbox.deselect_all'.tr(),
-            icon: const Icon(Icons.close),
-            onPressed: () => clearMailSelection(ref),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NormalHeader extends ConsumerWidget {
-  const _NormalHeader({
-    required this.accountIds,
-    required this.filter,
-    required this.tagKey,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.locationFor,
-  });
-
-  final List<String>? accountIds;
-  final String? filter;
-  final String? tagKey;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
-  final String Function({int? messageId}) locationFor;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = AppTokens.of(context);
-    final accounts = ref.watch(sidebarAccountsProvider).value ?? const [];
-    final promoCount =
-        ref.watch(promotionCountProvider(accountIds)).value ?? 0;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.sm,
-            AppSpace.sm,
-            AppSpace.sm,
-            0,
-          ),
-          child: TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, size: 18),
-              hintText: 'inbox.search_hint'.tr(),
-              isDense: true,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.sm,
-            AppSpace.sm,
-            AppSpace.sm,
-            0,
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _ScopeChip(
-                  label: 'inbox.scope_all'.tr(),
-                  selected: accountIds == null,
-                  onTap: () => context.go(locationFor()),
-                ),
-                for (final provider in {for (final a in accounts) a.provider})
-                  _ScopeChip(
-                    label: switch (provider) {
-                      MailProviderType.gmail => 'Gmail',
-                      MailProviderType.outlook => 'Outlook',
-                      MailProviderType.icloud => 'iCloud',
-                      MailProviderType.imap => 'IMAP',
-                      MailProviderType.demo => 'Demo',
-                    },
-                    selected:
-                        accountIds != null &&
-                        accounts
-                                .firstWhere((a) => a.id == accountIds!.first)
-                                .provider ==
-                            provider,
-                    onTap: () {
-                      final account = accounts.firstWhere(
-                        (a) => a.provider == provider,
-                      );
-                      context.go(
-                        Uri(
-                          path: AppRoutes.inbox,
-                          queryParameters: {
-                            'account': account.id,
-                            if (filter != null) 'filter': filter,
-                            if (tagKey != null) 'tag': tagKey,
-                          },
-                        ).toString(),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpace.sm,
-            AppSpace.sm,
-            AppSpace.sm,
-            0,
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final cat in CategoryFilter.values)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpace.xs),
-                    child: _CategoryChip(
-                      label: switch (cat) {
-                        CategoryFilter.primary => 'inbox.filter_primary'.tr(),
-                        CategoryFilter.transactions =>
-                          'inbox.filter_transactions'.tr(),
-                        CategoryFilter.updates => 'inbox.filter_updates'.tr(),
-                        CategoryFilter.promotions =>
-                          'inbox.filter_promotions'.tr(),
-                      },
-                      selected: filter == cat.name,
-                      onTap: () => context.go(
-                        Uri(
-                          path: AppRoutes.inbox,
-                          queryParameters: {
-                            if (accountIds != null) 'account': accountIds!.first,
-                            'filter': filter == cat.name ? null : cat.name,
-                            if (tagKey != null) 'tag': tagKey,
-                          },
-                        ).toString(),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        if (promoCount > 0)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpace.sm,
-              AppSpace.sm,
-              AppSpace.sm,
-              0,
-            ),
-            child: InkWell(
-              onTap: () => context.go(AppRoutes.smartScan),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
-                decoration: BoxDecoration(
-                  color: tokens.aiSurface,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: AppSpace.sm),
-                    Expanded(
-                      child: Text(
-                        'inbox.ai_banner'.tr(args: ['$promoCount']),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    Text(
-                      'inbox.ai_banner_cta'.tr(),
-                      style: Theme.of(context).textTheme.labelMedium
-                          ?.copyWith(color: Theme.of(context).colorScheme.primary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _ScopeChip extends StatelessWidget {
-  const _ScopeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpace.xs),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        selectedColor: scheme.onSurface,
-        labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: selected ? scheme.surface : scheme.onSurface,
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      labelStyle: Theme.of(
-        context,
-      ).textTheme.labelSmall?.copyWith(color: scheme.primary),
     );
   }
 }
@@ -997,6 +656,58 @@ class _TagMenuButton extends ConsumerWidget {
               : repo.assignTag(messageId, tag.id),
         );
       },
+    );
+  }
+}
+
+/// Slim Gmail-style nudge above the list: "AI: N promotional mails can be
+/// cleaned up · View". Only on the unfiltered list.
+class _AiBanner extends ConsumerWidget {
+  const _AiBanner({required this.accountIds});
+
+  final List<String>? accountIds;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final promoCount =
+        ref.watch(promotionCountProvider(accountIds)).value ?? 0;
+    if (promoCount == 0) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    return Material(
+      color: tokens.aiSurface,
+      child: InkWell(
+        onTap: () => context.go(AppRoutes.smartScan),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md,
+            vertical: AppSpace.sm,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: AppSpace.sm),
+              Expanded(
+                child: Text(
+                  'inbox.ai_banner'.tr(args: ['$promoCount']),
+                  style: theme.textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                'inbox.ai_banner_cta'.tr(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

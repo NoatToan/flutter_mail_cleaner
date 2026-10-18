@@ -2,7 +2,9 @@ import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider_factory.dart';
+import 'package:ai_smart_mail/core/storage/preferences.dart';
 import 'package:ai_smart_mail/features/inbox/data/inbox_repository.dart';
+import 'package:ai_smart_mail/features/inbox/domain/inbox_sort.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show immutable;
@@ -24,12 +26,14 @@ class InboxQuery {
     this.categoryFilter,
     this.tagKey,
     this.search = '',
+    this.sort = InboxSort.newest,
   });
 
   final List<String>? accountIds;
   final String? categoryFilter;
   final String? tagKey;
   final String search;
+  final InboxSort sort;
 
   @override
   bool operator ==(Object other) =>
@@ -37,7 +41,8 @@ class InboxQuery {
       const ListEquality<String>().equals(other.accountIds, accountIds) &&
       other.categoryFilter == categoryFilter &&
       other.tagKey == tagKey &&
-      other.search == search;
+      other.search == search &&
+      other.sort == sort;
 
   @override
   int get hashCode => Object.hash(
@@ -45,7 +50,33 @@ class InboxQuery {
     categoryFilter,
     tagKey,
     search,
+    sort,
   );
+}
+
+/// The list pane's sort order — survives a restart (PersistedState).
+@Riverpod(keepAlive: true)
+class InboxSortSetting extends _$InboxSortSetting
+    with PersistedState<InboxSort> {
+  @override
+  String get storageKey => 'inbox_sort.v1';
+
+  @override
+  Object? toJson(InboxSort state) => state.name;
+
+  @override
+  InboxSort fromJson(Object? json) =>
+      InboxSort.values.asNameMap()[json] ?? InboxSort.newest;
+
+  @override
+  InboxSort build() {
+    persistOnChange();
+    return readPersisted(InboxSort.newest);
+  }
+
+  // A setter (not a method) per very_good_analysis.
+  // ignore: avoid_setters_without_getters
+  set sort(InboxSort value) => state = value;
 }
 
 /// How many rows the list pane currently asks for — bumped by [loadMore] as
@@ -71,9 +102,19 @@ Stream<List<MessageListItem>> inboxMessages(Ref ref, InboxQuery query) {
         categoryFilter: filter,
         tagKey: query.tagKey,
         search: query.search,
+        sort: query.sort,
         limit: limit,
       );
 }
+
+/// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+@riverpod
+Stream<Map<CategoryFilter, int>> unreadByCategory(
+  Ref ref,
+  List<String>? accountIds,
+) => ref
+    .watch(inboxRepositoryProvider)
+    .watchUnreadByCategory(accountIds: accountIds);
 
 @riverpod
 Stream<int> promotionCount(Ref ref, List<String>? accountIds) => ref
@@ -138,9 +179,7 @@ Future<String?> messageBodyText(Ref ref, int messageId) async {
     await provider.disconnect();
   }
   if (body != null && body.isNotEmpty) {
-    await (db.update(
-      db.messages,
-    )..where((m) => m.id.equals(messageId))).write(
+    await (db.update(db.messages)..where((m) => m.id.equals(messageId))).write(
       MessagesCompanion(bodyText: Value(body)),
     );
   }
@@ -153,9 +192,11 @@ InboxQuery inboxQuery({
   String? categoryFilter,
   String? tagKey,
   String search = '',
+  InboxSort sort = InboxSort.newest,
 }) => InboxQuery(
   accountIds: accountIds,
   categoryFilter: categoryFilter,
   tagKey: tagKey,
   search: search,
+  sort: sort,
 );

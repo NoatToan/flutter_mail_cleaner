@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ai_smart_mail/app/routes.dart';
 import 'package:ai_smart_mail/core/actions/mail_actions_provider.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
 import 'package:ai_smart_mail/core/theme/app_tokens.dart';
@@ -13,6 +14,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// One row in the list pane (design: Inbox.dc.html). Unread dot, provider
 /// badge, subject + tag pill, a one-line snippet, a multi-select checkbox
@@ -117,6 +119,20 @@ class _MailListTileState extends ConsumerState<MailListTile> {
     final selectionMode = ref.watch(mailSelectionModeProvider);
     final showCheckbox = selectionMode || isChecked || _hovering;
 
+    final scheme = theme.colorScheme;
+    final unread = !item.isSeen;
+    // Gmail-style contrast: unread rows sit on the plain surface in bold,
+    // read rows are tinted and muted. The open row gets the selection color
+    // plus a primary bar on the left (Apple Mail).
+    final background = (widget.selected || isChecked)
+        ? tokens.selectedRow
+        : _hovering
+        ? tokens.subtleSurface
+        : unread
+        ? scheme.surface
+        : tokens.subtleSurface.withValues(alpha: 0.45);
+    final primaryText = unread ? scheme.onSurface : tokens.protected;
+
     return MenuAnchor(
       controller: _menuController,
       menuChildren: _buildMenuItems(context),
@@ -132,79 +148,95 @@ class _MailListTileState extends ConsumerState<MailListTile> {
             ref.read(mailSelectionModeProvider.notifier).enter();
             ref.read(mailSelectionProvider.notifier).toggle(item.id);
           },
-          child: Container(
-            color: (widget.selected || isChecked)
-                ? tokens.selectedRow
-                : Colors.transparent,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpace.md,
-              vertical: AppSpace.sm,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            decoration: BoxDecoration(
+              color: background,
+              border: Border(
+                left: BorderSide(
+                  color: widget.selected ? scheme.primary : Colors.transparent,
+                  width: 3,
+                ),
+                bottom: BorderSide(color: tokens.divider, width: 0.5),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.sm,
+              AppSpace.sm,
+              AppSpace.md,
+              AppSpace.sm,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (showCheckbox)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpace.sm),
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: Checkbox(
-                        value: isChecked,
-                        onChanged: (_) => ref
-                            .read(mailSelectionProvider.notifier)
-                            .toggle(item.id),
-                      ),
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpace.xxs),
-                    child: SizedBox(
-                      width: 7,
-                      height: 7,
-                      child: item.isSeen
-                          ? null
-                          : DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                shape: BoxShape.circle,
-                              ),
+                SizedBox(
+                  width: 22,
+                  height: 20,
+                  child: Center(
+                    child: showCheckbox
+                        ? Checkbox(
+                            value: isChecked,
+                            visualDensity: VisualDensity.compact,
+                            onChanged: (_) => ref
+                                .read(mailSelectionProvider.notifier)
+                                .toggle(item.id),
+                          )
+                        : unread
+                        ? Container(
+                            width: 9,
+                            height: 9,
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
                             ),
-                    ),
+                          )
+                        : null,
                   ),
-                const SizedBox(width: AppSpace.sm),
+                ),
+                const SizedBox(width: AppSpace.xs),
                 Padding(
-                  padding: const EdgeInsets.only(top: AppSpace.xxs),
-                  child: AccountBadge(provider: item.provider, size: 14),
+                  padding: const EdgeInsets.only(top: 2),
+                  child: AccountBadge(provider: item.provider),
                 ),
                 const SizedBox(width: AppSpace.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              senderLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: item.isSeen
-                                    ? FontWeight.w400
-                                    : FontWeight.w600,
+                      SizedBox(
+                        height: 20,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                senderLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: primaryText,
+                                  fontWeight: unread
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpace.sm),
-                          Text(
-                            formatMessageTime(item.date, locale),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: tokens.protected,
-                            ),
-                          ),
-                        ],
+                            const SizedBox(width: AppSpace.sm),
+                            if (_hovering && !widget.selected)
+                              ..._hoverActions(context)
+                            else
+                              Text(
+                                formatMessageTime(item.date, locale),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: unread
+                                      ? scheme.primary
+                                      : tokens.protected,
+                                  fontWeight: unread
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: AppSpace.xxs),
                       Row(
@@ -214,7 +246,12 @@ class _MailListTileState extends ConsumerState<MailListTile> {
                               _safe(item.subject, 'inbox.no_subject'.tr()),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: primaryText,
+                                fontWeight: unread
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
                             ),
                           ),
                           if (item.tagName != null) ...[
@@ -222,6 +259,11 @@ class _MailListTileState extends ConsumerState<MailListTile> {
                             TagPill(
                               name: item.tagName!,
                               colorKey: item.tagColorKey,
+                              onTap: item.tagKey == null
+                                  ? null
+                                  : () => context.go(
+                                      AppRoutes.inboxWith(tagKey: item.tagKey),
+                                    ),
                             ),
                           ],
                         ],
@@ -248,6 +290,47 @@ class _MailListTileState extends ConsumerState<MailListTile> {
     );
   }
 
+  /// Gmail's row hover: archive / delete / read-toggle replace the date.
+  List<Widget> _hoverActions(BuildContext context) {
+    final item = widget.item;
+    final tokens = AppTokens.of(context);
+    Widget action(
+      String tooltip,
+      IconData icon,
+      VoidCallback onTap, {
+      Color? color,
+    }) => IconButton(
+      tooltip: tooltip,
+      icon: Icon(icon, size: 17, color: color),
+      onPressed: onTap,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints.tightFor(width: 26, height: 20),
+    );
+    return [
+      action(
+        'inbox.archive'.tr(),
+        Icons.archive_outlined,
+        () => unawaited(runMailArchive(context, ref, [item.id])),
+      ),
+      action(
+        'inbox.trash'.tr(),
+        Icons.delete_outline,
+        () => unawaited(runMailTrash(context, ref, [item.id])),
+        color: tokens.danger,
+      ),
+      action(
+        item.isSeen ? 'inbox.mark_unread'.tr() : 'inbox.mark_read'.tr(),
+        item.isSeen
+            ? Icons.mark_email_unread_outlined
+            : Icons.mark_email_read_outlined,
+        () => unawaited(
+          runMailMarkRead(context, ref, [item.id], read: !item.isSeen),
+        ),
+      ),
+    ];
+  }
+
   List<int> _selectionIds() {
     final selection = ref.read(mailSelectionProvider);
     return selection.isEmpty ? [widget.item.id] : selection.toList();
@@ -263,7 +346,8 @@ class _MailListTileState extends ConsumerState<MailListTile> {
       ),
       MenuItemButton(
         shortcut: const SingleActivator(LogicalKeyboardKey.keyE),
-        onPressed: () => unawaited(runMailArchive(context, ref, _selectionIds())),
+        onPressed: () =>
+            unawaited(runMailArchive(context, ref, _selectionIds())),
         child: Text('inbox.archive'.tr()),
       ),
       MenuItemButton(
@@ -335,28 +419,38 @@ class _MailListTileState extends ConsumerState<MailListTile> {
 
 /// Small colored pill for one tag — shared by the list and reading pane.
 class TagPill extends StatelessWidget {
-  const TagPill({required this.name, this.colorKey, super.key});
+  const TagPill({required this.name, this.colorKey, this.onTap, super.key});
 
   final String name;
   final String? colorKey;
 
+  /// Set on list rows: tapping the pill filters the list by this tag.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final color = AppPalette.tag(colorKey ?? 'gray');
-    return Container(
+    final pill = Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
       height: 16,
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.sm - 1),
       ),
-      child: Text(
-        name,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600),
+      // widthFactor keeps the pill hugging its label inside a Wrap.
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          name,
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.w600),
+        ),
       ),
+    );
+    if (onTap == null) return pill;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onTap: onTap, child: pill),
     );
   }
 }

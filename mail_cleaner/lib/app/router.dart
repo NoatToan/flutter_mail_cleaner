@@ -82,26 +82,19 @@ GoRouter router(Ref ref) {
             path: AppRoutes.dashboard,
             builder: (_, _) => const DashboardScreen(),
           ),
+          // List and message share one page key and no transition: opening
+          // a mail only updates the same InboxScreen (no remount, no flicker,
+          // list scroll position kept).
           GoRoute(
             path: AppRoutes.inbox,
-            builder: (_, state) => InboxScreen(
-              accountId: state.uri.queryParameters['account'],
-              filter: state.uri.queryParameters['filter'],
-              tagKey: state.uri.queryParameters['tag'],
+            pageBuilder: (_, state) => _inboxPage(state),
+          ),
+          GoRoute(
+            path: '${AppRoutes.inbox}/message/:id',
+            pageBuilder: (_, state) => _inboxPage(
+              state,
+              selectedMessageId: int.tryParse(state.pathParameters['id'] ?? ''),
             ),
-            routes: [
-              GoRoute(
-                path: 'message/:id',
-                builder: (_, state) => InboxScreen(
-                  accountId: state.uri.queryParameters['account'],
-                  filter: state.uri.queryParameters['filter'],
-                  tagKey: state.uri.queryParameters['tag'],
-                  selectedMessageId: int.tryParse(
-                    state.pathParameters['id'] ?? '',
-                  ),
-                ),
-              ),
-            ],
           ),
           GoRoute(
             path: AppRoutes.mailboxes,
@@ -151,3 +144,14 @@ GoRouter router(Ref ref) {
   ref.onDispose(router.dispose);
   return router;
 }
+
+Page<void> _inboxPage(GoRouterState state, {int? selectedMessageId}) =>
+    NoTransitionPage(
+      key: const ValueKey('inbox'),
+      child: InboxScreen(
+        accountId: state.uri.queryParameters['account'],
+        filter: state.uri.queryParameters['filter'],
+        tagKey: state.uri.queryParameters['tag'],
+        selectedMessageId: selectedMessageId,
+      ),
+    );

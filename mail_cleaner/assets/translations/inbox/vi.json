@@ -54,6 +54,18 @@
     "folder_spam": "Thư rác",
     "folder_drafts": "Thư nháp",
     "folder_all": "Tất cả thư",
-    "folder_other": "Khác"
+    "folder_other": "Khác",
+    "filter_all": "Tất cả",
+    "unread_count": "{} chưa đọc",
+    "all_accounts": "Tất cả tài khoản",
+    "account_filter": "Lọc theo tài khoản",
+    "tag_filter": "Lọc theo tag",
+    "all_tags": "Tất cả tag",
+    "sort_label": "Sắp xếp",
+    "sort_newest": "Mới nhất",
+    "sort_oldest": "Cũ nhất",
+    "sort_unread_first": "Chưa đọc lên trước",
+    "sort_sender": "Người gửi A–Z",
+    "sort_largest": "Dung lượng lớn nhất"
   }
 }

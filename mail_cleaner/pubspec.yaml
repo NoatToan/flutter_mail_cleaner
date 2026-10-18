@@ -41,6 +41,7 @@ dependencies:
   flutter_appauth: ^12.1.0
   flutter_riverpod: ^3.4.3
   flutter_secure_storage: ^11.2.0
+  flutter_svg: ^2.2.4
   flutter_web_plugins:
     sdk: flutter
   freezed_annotation: ^3.1.0
@@ -70,6 +71,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/brand/
     - assets/translations/common/
     - assets/translations/shell/
     - assets/translations/onboarding/

@@ -54,6 +54,18 @@
     "folder_spam": "Spam",
     "folder_drafts": "Drafts",
     "folder_all": "All mail",
-    "folder_other": "Other"
+    "folder_other": "Other",
+    "filter_all": "All",
+    "unread_count": "{} unread",
+    "all_accounts": "All accounts",
+    "account_filter": "Filter by account",
+    "tag_filter": "Filter by tag",
+    "all_tags": "All tags",
+    "sort_label": "Sort",
+    "sort_newest": "Newest first",
+    "sort_oldest": "Oldest first",
+    "sort_unread_first": "Unread first",
+    "sort_sender": "Sender A–Z",
+    "sort_largest": "Largest first"
   }
 }
