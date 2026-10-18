@@ -5,6 +5,7 @@ import 'package:ai_smart_mail/features/dashboard/presentation/screens/dashboard_
 import 'package:ai_smart_mail/features/inbox/presentation/screens/inbox_screen.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/screens/mailboxes_screen.dart';
 import 'package:ai_smart_mail/features/onboarding/presentation/screens/add_account_screen.dart';
+import 'package:ai_smart_mail/features/onboarding/presentation/screens/oauth_callback_screen.dart';
 import 'package:ai_smart_mail/features/onboarding/presentation/screens/scanning_screen.dart';
 import 'package:ai_smart_mail/features/onboarding/presentation/screens/welcome_screen.dart';
 import 'package:ai_smart_mail/features/senders/presentation/screens/sender_detail_screen.dart';
@@ -23,7 +24,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'router.g.dart';
 
 /// Developer launch option: `--dart-define=INITIAL_ROUTE=/dashboard`.
-const _initialRoute = String.fromEnvironment('INITIAL_ROUTE', defaultValue: AppRoutes.inbox);
+const _initialRoute = String.fromEnvironment(
+  'INITIAL_ROUTE',
+  defaultValue: AppRoutes.inbox,
+);
 
 /// Route table only (rule: routing stays thin). Each slice owns its screens.
 @Riverpod(keepAlive: true)
@@ -65,6 +69,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppRoutes.scanning,
         builder: (_, _) => const ScanningScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.oauthCallback,
+        builder: (_, state) => OAuthCallbackScreen(callback: state.uri),
       ),
       ShellRoute(
         builder: (context, state, child) =>
@@ -116,8 +124,9 @@ GoRouter router(Ref ref) {
               ),
               GoRoute(
                 path: ':email',
-                builder: (_, state) =>
-                    SenderDetailScreen(email: state.pathParameters['email'] ?? ''),
+                builder: (_, state) => SenderDetailScreen(
+                  email: state.pathParameters['email'] ?? '',
+                ),
               ),
             ],
           ),

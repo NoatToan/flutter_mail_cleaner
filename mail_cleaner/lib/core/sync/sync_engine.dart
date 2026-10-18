@@ -84,7 +84,11 @@ class SyncEngine {
       final toFetch = remoteFolders.where((f) => _syncableRoles.contains(f.role));
       final estimatedTotal = toFetch.fold<int>(0, (a, f) => a + f.totalCount);
       final customTags = await _customTagSpecs();
-      final isGmail = account.provider == MailProviderType.gmail;
+      // The daily byte cap is Gmail's IMAP download limit; the Gmail API
+      // (web) only fetches metadata and has its own per-request quotas.
+      final isGmail =
+          account.provider == MailProviderType.gmail &&
+          account.authKind != AuthKind.oauthApi;
 
       // Folders we don't eagerly fetch (custom labels) still get a row so
       // the Mailboxes screen can show their remote counts.

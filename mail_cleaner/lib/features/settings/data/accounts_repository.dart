@@ -11,6 +11,7 @@ class SettingsAccount {
   const SettingsAccount({
     required this.id,
     required this.provider,
+    required this.authKind,
     required this.email,
     required this.syncState,
     required this.lastError,
@@ -19,6 +20,7 @@ class SettingsAccount {
 
   final String id;
   final MailProviderType provider;
+  final AuthKind authKind;
   final String email;
   final SyncState syncState;
   final String? lastError;
@@ -32,13 +34,17 @@ class AccountsRepository {
   final AppDatabase _db;
   final CredentialsStore _credentials;
 
-  Stream<List<SettingsAccount>> watchAccounts() =>
-      _db.select(_db.accounts).watch().throttleLatest().map(
+  Stream<List<SettingsAccount>> watchAccounts() => _db
+      .select(_db.accounts)
+      .watch()
+      .throttleLatest()
+      .map(
         (rows) => [
           for (final a in rows)
             SettingsAccount(
               id: a.id,
               provider: a.provider,
+              authKind: a.authKind,
               email: a.email,
               syncState: a.syncState,
               lastError: a.lastError,

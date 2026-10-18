@@ -12,3 +12,11 @@ Bản gốc (sống, có sơ đồ, sửa/comment được):
 - Thiết kế: https://claude.ai/artifact/HpPJH6NnEnKC95pfgwa11s
 
 Bước tiếp theo gợi ý: `flutter create --org com.donmail mail_cleaner` trong thư mục này, rồi theo TECH_SPEC §2–6 (Riverpod 3 + codegen, go_router, drift, freezed, enough_mail sau interface MailProvider).
+
+## Bản web (Vercel)
+
+- Build: `bash scripts/build_web.sh` → `build/web` (tự clone Flutter 3.47.7 vào `.flutter-sdk/` nếu máy không có `flutter`; đặt `FLUTTER=/path/to/flutter` để dùng SDK khác).
+- Chạy thử: `flutter run -d chrome --web-header=Cross-Origin-Opener-Policy=same-origin --web-header=Cross-Origin-Embedder-Policy=credentialless`.
+- Deploy: `vercel.json` ở root repo — Vercel chạy script trên và serve `mail_cleaner/build/web` (kèm header COOP/COEP để drift dùng OPFS).
+- Drift trên web cần `web/sqlite3.wasm` + `web/drift_worker.js`, lấy từ release drift **đúng version trong `pubspec.lock`** (hiện 2.35.2) — nâng drift thì tải lại 2 file này.
+- Hộp thư thật trên web: trình duyệt không mở được socket IMAP, nên bản web kết nối **Gmail qua Gmail API** và **Outlook/Microsoft 365 qua Microsoft Graph** (OAuth redirect + PKCE; client secret nằm trong function `api/oauth-token.js` trên Vercel, không bao giờ xuống trình duyệt). Cấu hình: [docs/OAUTH_WEB.md](docs/OAUTH_WEB.md). Chưa cấu hình thì nút đăng nhập hiện "chưa được cấu hình" và vẫn dùng được hộp thư mẫu. iCloud/IMAP khác vẫn chỉ có trên app macOS.

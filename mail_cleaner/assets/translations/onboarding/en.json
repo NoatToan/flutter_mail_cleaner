@@ -59,6 +59,12 @@
     "error_icloud_app_password": "iCloud needs an app-specific password, not your Apple ID password. Create one at account.apple.com › Sign-In and Security › App-Specific Passwords.",
     "error_outlook_oauth_required": "Outlook.com/Microsoft 365 no longer allows password sign-in over IMAP. Microsoft sign-in (OAuth) is required — configure OUTLOOK_CLIENT_ID.",
     "error_network": "Couldn't reach the mail server. Check your connection, host and port (IMAP is usually 993).",
-    "error_server_said": "Server said: {}"
+    "error_server_said": "Server said: {}",
+    "web_add_account_subtitle": "Sign in with Google or Microsoft. Mail is synced and analyzed right in this browser; your password is never shared with us.",
+    "web_provider_not_configured": "Not set up on this deployment yet.",
+    "web_imap_desktop_only": "Needs the macOS app (browsers can't connect over IMAP).",
+    "oauth_completing": "Finishing sign-in…",
+    "oauth_failed_title": "Couldn't connect the mailbox.",
+    "oauth_back_to_add": "Back to Add account"
   }
 }

@@ -1,0 +1,8 @@
+mail_cleaner/build
+mail_cleaner/.dart_tool
+mail_cleaner/.flutter-sdk
+mail_cleaner/android
+mail_cleaner/ios
+mail_cleaner/macos/Pods
+mail_cleaner/design
+.claude

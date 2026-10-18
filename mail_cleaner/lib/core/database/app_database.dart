@@ -19,17 +19,29 @@ part 'app_database.g.dart';
     LabelsTraining,
     SummariesCache,
     AiTransparencyLog,
+    RemoteMessageIds,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
-    : super(executor ?? driftDatabase(name: 'ai_smart_mail'));
+    : super(
+        executor ??
+            driftDatabase(
+              name: 'ai_smart_mail',
+              // Web build: sqlite3.wasm + drift_worker.js are shipped in
+              // `web/` (from the drift release matching pubspec.lock).
+              web: DriftWebOptions(
+                sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+                driftWorker: Uri.parse('drift_worker.js'),
+              ),
+            ),
+      );
 
   /// In-memory DB for tests.
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +65,10 @@ class AppDatabase extends _$AppDatabase {
       await _createFts();
       await _seedSystemTags();
     },
+    onUpgrade: (m, from, to) async {
+      // v2: uid ↔ remote id map for the Gmail API / Graph transports.
+      if (from < 2) await m.createTable(remoteMessageIds);
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
@@ -60,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// FTS5 full-text index over subject/fromName/snippet (search field, inbox
   /// list). Kept in sync via triggers so callers never maintain it by hand.
-  /// Schema stays at version 1 (app unreleased) — this is appended in onCreate.
+  /// Created in onCreate (part of the v1 schema).
   Future<void> _createFts() async {
     await customStatement('''
       CREATE VIRTUAL TABLE messages_fts USING fts5(

@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,7 +10,7 @@ part 'credentials_store.g.dart';
 class CredentialsStore {
   CredentialsStore()
     : _storage = FlutterSecureStorage(
-        mOptions: Platform.isMacOS
+        mOptions: defaultTargetPlatform == TargetPlatform.macOS && !kIsWeb
             // Unsigned dev builds fail with -34018 unless this is off
             // (see TECH_SPEC / codebase-map): falls back to the legacy
             // Keychain instead of requiring Keychain Sharing entitlements.
@@ -36,6 +35,17 @@ class CredentialsStore {
 
   Future<String?> readOAuthTokens(String accountId) =>
       _storage.read(key: _oauthKey(accountId));
+
+  static const _pendingOAuthKey = 'oauth.pending';
+
+  /// Web OAuth in flight (PKCE verifier + state), JSON-encoded by the caller.
+  /// Survives the full-page redirect to the provider and back.
+  Future<void> savePendingOAuth(String json) =>
+      _storage.write(key: _pendingOAuthKey, value: json);
+
+  Future<String?> readPendingOAuth() => _storage.read(key: _pendingOAuthKey);
+
+  Future<void> deletePendingOAuth() => _storage.delete(key: _pendingOAuthKey);
 
   Future<void> deleteAccount(String accountId) async {
     await _storage.delete(key: _passwordKey(accountId));

@@ -50,3 +50,4 @@ app.*.map.json
 # Google OAuth client credentials (see docs/OAUTH_GOOGLE.md) — never commit
 # the real id/secret, only config/oauth.example.json.
 /config/oauth.json
+/.flutter-sdk/

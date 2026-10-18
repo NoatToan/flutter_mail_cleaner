@@ -55,4 +55,4 @@ final class MailProviderFactoryProvider
 }
 
 String _$mailProviderFactoryHash() =>
-    r'77f4d9c68fffb9c03c5fb14cb1d769b7e71e4d6b';
+    r'6a10d1c508e556112b8c5a5738bc94a0973f4402';

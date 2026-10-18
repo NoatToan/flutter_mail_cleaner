@@ -19,7 +19,7 @@ part of 'mail_selection_provider.dart';
 /// rebuilds just that row (plus whatever watches `.length` for the bulk
 /// toolbar), not the rest of the list.
 ///
-/// Scoped to "the current list": [InboxScreen] clears it whenever the
+/// Scoped to "the current list": the inbox screen clears it whenever the
 /// mailbox/filter/search changes, so a selection never leaks across lists.
 
 @ProviderFor(MailSelection)
@@ -36,7 +36,7 @@ final mailSelectionProvider = MailSelectionProvider._();
 /// rebuilds just that row (plus whatever watches `.length` for the bulk
 /// toolbar), not the rest of the list.
 ///
-/// Scoped to "the current list": [InboxScreen] clears it whenever the
+/// Scoped to "the current list": the inbox screen clears it whenever the
 /// mailbox/filter/search changes, so a selection never leaks across lists.
 final class MailSelectionProvider
     extends $NotifierProvider<MailSelection, Set<int>> {
@@ -51,7 +51,7 @@ final class MailSelectionProvider
   /// rebuilds just that row (plus whatever watches `.length` for the bulk
   /// toolbar), not the rest of the list.
   ///
-  /// Scoped to "the current list": [InboxScreen] clears it whenever the
+  /// Scoped to "the current list": the inbox screen clears it whenever the
   /// mailbox/filter/search changes, so a selection never leaks across lists.
   MailSelectionProvider._()
     : super(
@@ -93,7 +93,7 @@ String _$mailSelectionHash() => r'112e2e820dd1619c7f4750dd1f8c5034a7ffb104';
 /// rebuilds just that row (plus whatever watches `.length` for the bulk
 /// toolbar), not the rest of the list.
 ///
-/// Scoped to "the current list": [InboxScreen] clears it whenever the
+/// Scoped to "the current list": the inbox screen clears it whenever the
 /// mailbox/filter/search changes, so a selection never leaks across lists.
 
 abstract class _$MailSelection extends $Notifier<Set<int>> {

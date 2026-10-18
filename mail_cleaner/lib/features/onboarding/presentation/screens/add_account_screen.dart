@@ -7,7 +7,9 @@ import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/core/widgets/account_badge.dart';
 import 'package:ai_smart_mail/features/onboarding/presentation/providers/add_account_providers.dart';
 import 'package:ai_smart_mail/features/onboarding/presentation/widgets/onboarding_scaffold.dart';
+import 'package:ai_smart_mail/features/onboarding/presentation/widgets/web_connect_panel.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +28,9 @@ class AddAccountScreen extends ConsumerStatefulWidget {
 class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   // Built once per screen, not rebuilt on every build() (house rule 04).
   late final FormGroup form = FormGroup({
-    'email': FormControl<String>(validators: [Validators.required, Validators.email]),
+    'email': FormControl<String>(
+      validators: [Validators.required, Validators.email],
+    ),
     'password': FormControl<String>(validators: [Validators.required]),
     'host': FormControl<String>(),
     'port': FormControl<int>(value: 993),
@@ -62,148 +66,243 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
     return OnboardingScaffold(
       onBack: () => context.go(AppRoutes.welcome),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpace.xl,
-          AppSpace.sm,
-          AppSpace.xl,
-          AppSpace.xl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'onboarding.add_account_title'.tr(),
-              style: theme.textTheme.headlineSmall,
-            ),
-            const SizedBox(height: AppSpace.xs),
-            Text(
-              'onboarding.add_account_subtitle'.tr(),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: tokens.protected,
+      // Browsers can't open raw IMAP sockets (nor the OAuth loopback
+      // server): the web build connects Gmail/Outlook over their REST APIs.
+      child: kIsWeb
+          ? const WebConnectPanel()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.xl,
+                AppSpace.sm,
+                AppSpace.xl,
+                AppSpace.xl,
               ),
-            ),
-            const SizedBox(height: AppSpace.lg),
-            Card(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final option in AddAccountOption.values)
-                    _ProviderTile(
-                      option: option,
-                      selected: state.selected == option,
-                      onTap: () => controller.selectProvider(option),
-                    ),
-                ],
-              ),
-            ),
-            if (state.selected == AddAccountOption.icloud) ...[
-              const SizedBox(height: AppSpace.lg),
-              _AppPasswordGuide(
-                title: 'onboarding.icloud_guide_title'.tr(),
-                steps: [
-                  'onboarding.icloud_guide_step1'.tr(),
-                  'onboarding.icloud_guide_step2'.tr(),
-                  'onboarding.icloud_guide_step3'.tr(),
-                  'onboarding.icloud_guide_step4'.tr(),
-                ],
-              ),
-            ],
-            if (state.selected == AddAccountOption.outlook) ...[
-              const SizedBox(height: AppSpace.lg),
-              Text(
-                'onboarding.outlook_intro'.tr(),
-                style: theme.textTheme.bodySmall,
-              ),
-              if (!isOutlookOAuthConfigured) ...[
-                const SizedBox(height: AppSpace.xs),
-                Text(
-                  'onboarding.outlook_oauth_disabled'.tr(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: tokens.review,
+                  Text(
+                    'onboarding.add_account_title'.tr(),
+                    style: theme.textTheme.headlineSmall,
                   ),
-                ),
-              ],
-            ],
-            if (state.selected == AddAccountOption.gmail) ...[
-              const SizedBox(height: AppSpace.lg),
-              if (!isGoogleOAuthConfigured) ...[
-                Text(
-                  'onboarding.google_oauth_disabled'.tr(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: tokens.review,
-                  ),
-                ),
-                const SizedBox(height: AppSpace.sm),
-              ],
-              if (state.isWaitingGoogleBrowser) ...[
-                const Center(
-                  child: SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-                const SizedBox(height: AppSpace.sm),
-                Text(
-                  'onboarding.google_oauth_waiting'.tr(),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: tokens.protected,
-                  ),
-                ),
-                const SizedBox(height: AppSpace.sm),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: controller.cancelGoogleOAuth,
-                    child: Text('onboarding.cancel'.tr()),
-                  ),
-                ),
-              ] else
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: isGoogleOAuthConfigured && !state.isConnecting
-                        ? () => unawaited(controller.connectGoogleOAuth())
-                        : null,
-                    icon: const Icon(Icons.g_mobiledata, size: 22),
-                    label: Text(
-                      state.isConnecting &&
-                              state.lastAttempt == ConnectAttempt.google
-                          ? 'onboarding.connecting'.tr()
-                          : 'onboarding.connect_google_cta'.tr(),
+                  const SizedBox(height: AppSpace.xs),
+                  Text(
+                    'onboarding.add_account_subtitle'.tr(),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.protected,
                     ),
                   ),
-                ),
-              if (state.errorMessage != null &&
-                  state.lastAttempt == ConnectAttempt.google) ...[
-                const SizedBox(height: AppSpace.sm),
-                Text(
-                  state.errorMessage!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: tokens.danger,
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpace.md),
-              Theme(
-                data: theme.copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  tilePadding: EdgeInsets.zero,
-                  childrenPadding: EdgeInsets.zero,
-                  title: Text(
-                    'onboarding.gmail_alt_app_password'.tr(),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  children: [
-                    _AppPasswordGuide(
-                      title: 'onboarding.gmail_guide_title'.tr(),
-                      steps: [
-                        'onboarding.gmail_guide_step1'.tr(),
-                        'onboarding.gmail_guide_step2'.tr(),
+                  const SizedBox(height: AppSpace.lg),
+                  Card(
+                    child: Column(
+                      children: [
+                        for (final option in AddAccountOption.values)
+                          _ProviderTile(
+                            option: option,
+                            selected: state.selected == option,
+                            onTap: () => controller.selectProvider(option),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: AppSpace.sm),
+                  ),
+                  if (state.selected == AddAccountOption.icloud) ...[
+                    const SizedBox(height: AppSpace.lg),
+                    _AppPasswordGuide(
+                      title: 'onboarding.icloud_guide_title'.tr(),
+                      steps: [
+                        'onboarding.icloud_guide_step1'.tr(),
+                        'onboarding.icloud_guide_step2'.tr(),
+                        'onboarding.icloud_guide_step3'.tr(),
+                        'onboarding.icloud_guide_step4'.tr(),
+                      ],
+                    ),
+                  ],
+                  if (state.selected == AddAccountOption.outlook) ...[
+                    const SizedBox(height: AppSpace.lg),
+                    Text(
+                      'onboarding.outlook_intro'.tr(),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (!isOutlookOAuthConfigured) ...[
+                      const SizedBox(height: AppSpace.xs),
+                      Text(
+                        'onboarding.outlook_oauth_disabled'.tr(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: tokens.review,
+                        ),
+                      ),
+                    ],
+                  ],
+                  if (state.selected == AddAccountOption.gmail) ...[
+                    const SizedBox(height: AppSpace.lg),
+                    if (!isGoogleOAuthConfigured) ...[
+                      Text(
+                        'onboarding.google_oauth_disabled'.tr(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: tokens.review,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.sm),
+                    ],
+                    if (state.isWaitingGoogleBrowser) ...[
+                      const Center(
+                        child: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.sm),
+                      Text(
+                        'onboarding.google_oauth_waiting'.tr(),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: tokens.protected,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpace.sm),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: controller.cancelGoogleOAuth,
+                          child: Text('onboarding.cancel'.tr()),
+                        ),
+                      ),
+                    ] else
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed:
+                              isGoogleOAuthConfigured && !state.isConnecting
+                              ? () => unawaited(controller.connectGoogleOAuth())
+                              : null,
+                          icon: const Icon(Icons.g_mobiledata, size: 22),
+                          label: Text(
+                            state.isConnecting &&
+                                    state.lastAttempt == ConnectAttempt.google
+                                ? 'onboarding.connecting'.tr()
+                                : 'onboarding.connect_google_cta'.tr(),
+                          ),
+                        ),
+                      ),
+                    if (state.errorMessage != null &&
+                        state.lastAttempt == ConnectAttempt.google) ...[
+                      const SizedBox(height: AppSpace.sm),
+                      Text(
+                        state.errorMessage!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: tokens.danger,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpace.md),
+                    Theme(
+                      data: theme.copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
+                        title: Text(
+                          'onboarding.gmail_alt_app_password'.tr(),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        children: [
+                          _AppPasswordGuide(
+                            title: 'onboarding.gmail_guide_title'.tr(),
+                            steps: [
+                              'onboarding.gmail_guide_step1'.tr(),
+                              'onboarding.gmail_guide_step2'.tr(),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpace.sm),
+                          ReactiveForm(
+                            formGroup: form,
+                            child: Column(
+                              children: [
+                                ReactiveTextField<String>(
+                                  formControlName: 'email',
+                                  validationMessages: _validationMessages(),
+                                  decoration: InputDecoration(
+                                    labelText: 'onboarding.field_email'.tr(),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpace.sm),
+                                ReactiveTextField<String>(
+                                  formControlName: 'password',
+                                  obscureText: true,
+                                  validationMessages: _validationMessages(),
+                                  decoration: InputDecoration(
+                                    labelText: 'onboarding.field_app_password'
+                                        .tr(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (state.errorMessage != null &&
+                              state.lastAttempt == ConnectAttempt.password) ...[
+                            const SizedBox(height: AppSpace.sm),
+                            if (state.errorHintKey != null)
+                              Text(
+                                state.errorHintKey!.tr(),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: tokens.danger,
+                                ),
+                              ),
+                            Text(
+                              state.errorHintKey == null
+                                  ? state.errorMessage!
+                                  : 'onboarding.error_server_said'.tr(
+                                      args: [state.errorMessage!],
+                                    ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: state.errorHintKey == null
+                                    ? tokens.danger
+                                    : tokens.protected,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: AppSpace.sm),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: state.isConnecting
+                                  ? null
+                                  : () {
+                                      form.markAllAsTouched();
+                                      if (form.invalid) return;
+                                      unawaited(
+                                        controller.connectWithPassword(
+                                          email:
+                                              form.control('email').value
+                                                  as String,
+                                          password:
+                                              form.control('password').value
+                                                  as String,
+                                        ),
+                                      );
+                                    },
+                              child:
+                                  state.isConnecting &&
+                                      state.lastAttempt ==
+                                          ConnectAttempt.password
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text('onboarding.connect_cta'.tr()),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpace.sm),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (state.selected != null &&
+                      state.selected != AddAccountOption.gmail) ...[
+                    const SizedBox(height: AppSpace.lg),
                     ReactiveForm(
                       formGroup: form,
                       child: Column(
@@ -215,20 +314,42 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                               labelText: 'onboarding.field_email'.tr(),
                             ),
                           ),
-                          const SizedBox(height: AppSpace.sm),
-                          ReactiveTextField<String>(
-                            formControlName: 'password',
-                            obscureText: true,
-                            validationMessages: _validationMessages(),
-                            decoration: InputDecoration(
-                              labelText: 'onboarding.field_app_password'.tr(),
+                          if (state.selected == AddAccountOption.imap) ...[
+                            const SizedBox(height: AppSpace.sm),
+                            ReactiveTextField<String>(
+                              formControlName: 'host',
+                              validationMessages: _validationMessages(),
+                              decoration: InputDecoration(
+                                labelText: 'onboarding.field_host'.tr(),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: AppSpace.sm),
+                            ReactiveTextField<int>(
+                              formControlName: 'port',
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: 'onboarding.field_port'.tr(),
+                              ),
+                            ),
+                          ],
+                          if (state.selected != AddAccountOption.outlook) ...[
+                            const SizedBox(height: AppSpace.sm),
+                            ReactiveTextField<String>(
+                              formControlName: 'password',
+                              obscureText: true,
+                              validationMessages: _validationMessages(),
+                              decoration: InputDecoration(
+                                labelText:
+                                    state.selected == AddAccountOption.icloud
+                                    ? 'onboarding.field_app_password'.tr()
+                                    : 'onboarding.field_password'.tr(),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    if (state.errorMessage != null &&
-                        state.lastAttempt == ConnectAttempt.password) ...[
+                    if (state.errorMessage != null) ...[
                       const SizedBox(height: AppSpace.sm),
                       if (state.errorHintKey != null)
                         Text(
@@ -250,185 +371,91 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: AppSpace.sm),
+                    const SizedBox(height: AppSpace.md),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(
-                        onPressed: state.isConnecting
-                            ? null
-                            : () {
-                                form.markAllAsTouched();
-                                if (form.invalid) return;
-                                unawaited(
-                                  controller.connectWithPassword(
-                                    email:
-                                        form.control('email').value as String,
-                                    password:
-                                        form.control('password').value
-                                            as String,
-                                  ),
-                                );
-                              },
-                        child:
-                            state.isConnecting &&
-                                state.lastAttempt == ConnectAttempt.password
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text('onboarding.connect_cta'.tr()),
-                      ),
+                      child: state.selected == AddAccountOption.outlook
+                          ? FilledButton.icon(
+                              onPressed:
+                                  isOutlookOAuthConfigured &&
+                                      !state.isConnecting
+                                  ? () {
+                                      form.control('email').markAsTouched();
+                                      if (form.control('email').invalid) return;
+                                      unawaited(
+                                        controller.connectOutlookOAuth(
+                                          email:
+                                              form.control('email').value
+                                                  as String,
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.login, size: 16),
+                              label: Text(
+                                state.isConnecting
+                                    ? 'onboarding.connecting'.tr()
+                                    : 'onboarding.connect_outlook_cta'.tr(),
+                              ),
+                            )
+                          : FilledButton(
+                              onPressed: state.isConnecting
+                                  ? null
+                                  : () {
+                                      form.markAllAsTouched();
+                                      if (form.invalid) return;
+                                      unawaited(
+                                        controller.connectWithPassword(
+                                          email:
+                                              form.control('email').value
+                                                  as String,
+                                          password:
+                                              form.control('password').value
+                                                  as String,
+                                          host:
+                                              state.selected ==
+                                                  AddAccountOption.imap
+                                              ? form.control('host').value
+                                                    as String?
+                                              : null,
+                                          port:
+                                              state.selected ==
+                                                  AddAccountOption.imap
+                                              ? form.control('port').value
+                                                    as int?
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                              child: state.isConnecting
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text('onboarding.connect_cta'.tr()),
+                            ),
                     ),
-                    const SizedBox(height: AppSpace.sm),
                   ],
-                ),
-              ),
-            ],
-            if (state.selected != null &&
-                state.selected != AddAccountOption.gmail) ...[
-              const SizedBox(height: AppSpace.lg),
-              ReactiveForm(
-                formGroup: form,
-                child: Column(
-                  children: [
-                    ReactiveTextField<String>(
-                      formControlName: 'email',
-                      validationMessages: _validationMessages(),
-                      decoration: InputDecoration(
-                        labelText: 'onboarding.field_email'.tr(),
-                      ),
+                  const SizedBox(height: AppSpace.lg),
+                  const Divider(),
+                  const SizedBox(height: AppSpace.sm),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: state.isConnecting
+                          ? null
+                          : controller.createDemoAccounts,
+                      icon: const Icon(Icons.science_outlined, size: 16),
+                      label: Text('onboarding.try_demo_cta'.tr()),
                     ),
-                    if (state.selected == AddAccountOption.imap) ...[
-                      const SizedBox(height: AppSpace.sm),
-                      ReactiveTextField<String>(
-                        formControlName: 'host',
-                        validationMessages: _validationMessages(),
-                        decoration: InputDecoration(
-                          labelText: 'onboarding.field_host'.tr(),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpace.sm),
-                      ReactiveTextField<int>(
-                        formControlName: 'port',
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'onboarding.field_port'.tr(),
-                        ),
-                      ),
-                    ],
-                    if (state.selected != AddAccountOption.outlook) ...[
-                      const SizedBox(height: AppSpace.sm),
-                      ReactiveTextField<String>(
-                        formControlName: 'password',
-                        obscureText: true,
-                        validationMessages: _validationMessages(),
-                        decoration: InputDecoration(
-                          labelText: state.selected == AddAccountOption.icloud
-                              ? 'onboarding.field_app_password'.tr()
-                              : 'onboarding.field_password'.tr(),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (state.errorMessage != null) ...[
-                const SizedBox(height: AppSpace.sm),
-                if (state.errorHintKey != null)
-                  Text(
-                    state.errorHintKey!.tr(),
-                    style: theme.textTheme.bodyMedium?.copyWith(color: tokens.danger),
                   ),
-                Text(
-                  state.errorHintKey == null
-                      ? state.errorMessage!
-                      : 'onboarding.error_server_said'.tr(args: [state.errorMessage!]),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: state.errorHintKey == null ? tokens.danger : tokens.protected,
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpace.md),
-              SizedBox(
-                width: double.infinity,
-                child: state.selected == AddAccountOption.outlook
-                    ? FilledButton.icon(
-                        onPressed: isOutlookOAuthConfigured && !state.isConnecting
-                            ? () {
-                                form.control('email').markAsTouched();
-                                if (form.control('email').invalid) return;
-                                unawaited(
-                                  controller.connectOutlookOAuth(
-                                    email:
-                                        form.control('email').value as String,
-                                  ),
-                                );
-                              }
-                            : null,
-                        icon: const Icon(Icons.login, size: 16),
-                        label: Text(
-                          state.isConnecting
-                              ? 'onboarding.connecting'.tr()
-                              : 'onboarding.connect_outlook_cta'.tr(),
-                        ),
-                      )
-                    : FilledButton(
-                        onPressed: state.isConnecting
-                            ? null
-                            : () {
-                                form.markAllAsTouched();
-                                if (form.invalid) return;
-                                unawaited(
-                                  controller.connectWithPassword(
-                                    email:
-                                        form.control('email').value as String,
-                                    password:
-                                        form.control('password').value
-                                            as String,
-                                    host:
-                                        state.selected == AddAccountOption.imap
-                                        ? form.control('host').value as String?
-                                        : null,
-                                    port:
-                                        state.selected == AddAccountOption.imap
-                                        ? form.control('port').value as int?
-                                        : null,
-                                  ),
-                                );
-                              },
-                        child: state.isConnecting
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text('onboarding.connect_cta'.tr()),
-                      ),
-              ),
-            ],
-            const SizedBox(height: AppSpace.lg),
-            const Divider(),
-            const SizedBox(height: AppSpace.sm),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: state.isConnecting
-                    ? null
-                    : controller.createDemoAccounts,
-                icon: const Icon(Icons.science_outlined, size: 16),
-                label: Text('onboarding.try_demo_cta'.tr()),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
