@@ -1,4 +1,5 @@
 import 'package:ai_smart_mail/core/domain/enums.dart';
+import 'package:ai_smart_mail/core/layout/window_size.dart';
 import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/core/widgets/account_badge.dart';
 import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
@@ -52,8 +53,10 @@ class _DetailBody extends ConsumerWidget {
         : detail.row.fromName;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpace.xl,
+      padding: EdgeInsets.symmetric(
+        horizontal: WindowSize.of(context).isCompact
+            ? AppSpace.lg
+            : AppSpace.xl,
         vertical: AppSpace.lg,
       ),
       child: Center(
@@ -97,7 +100,10 @@ class _DetailBody extends ConsumerWidget {
                             Text(
                               'inbox.to_label'.tr(
                                 args: [
-                                  if (detail.row.toLine.isEmpty) detail.accountEmail else detail.row.toLine,
+                                  if (detail.row.toLine.isEmpty)
+                                    detail.accountEmail
+                                  else
+                                    detail.row.toLine,
                                 ],
                               ),
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -276,8 +282,7 @@ class _AccountPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = AccountBadge.colorOf(provider);
     return Container(
-      height: 18,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpace.sm, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppRadius.sm - 1),
@@ -289,9 +294,8 @@ class _AccountPill extends StatelessWidget {
           const SizedBox(width: AppSpace.xxs),
           Text(
             _label(provider),
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: color),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: color),
           ),
         ],
       ),

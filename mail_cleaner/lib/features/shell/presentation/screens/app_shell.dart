@@ -5,16 +5,30 @@ import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/features/shell/presentation/widgets/app_sidebar.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:go_router/go_router.dart';
 
 /// Adaptive navigation chrome (TECH_SPEC §2a):
 /// expanded/large → source-list sidebar; medium → NavigationRail;
-/// compact → bottom NavigationBar with the 5 iOS tabs.
-class AppShell extends StatelessWidget {
+/// compact → bottom NavigationBar with the 5 iOS tabs, which slides away
+/// while the user scrolls down and comes back on any scroll up.
+class AppShell extends StatefulWidget {
   const AppShell({required this.location, required this.child, super.key});
 
   final Uri location;
   final Widget child;
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  /// Bottom bar visibility (compact only). A notifier rather than setState so
+  /// a scroll flip rebuilds only the bar, never the routed page.
+  final _navVisible = ValueNotifier<bool>(true);
+
+  Uri get location => widget.location;
+  Widget get child => widget.child;
 
   static const List<(String, IconData, String)> _tabs = [
     (AppRoutes.inbox, Icons.inbox_outlined, 'shell.tab_inbox'),
@@ -33,6 +47,39 @@ class AppShell extends StatelessWidget {
       return 1;
     }
     return 0;
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new destination always starts with the bar on screen.
+    if (widget.location.path != oldWidget.location.path) {
+      _navVisible.value = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _navVisible.dispose();
+    super.dispose();
+  }
+
+  bool _onUserScroll(UserScrollNotification n) {
+    // Vertical lists only — the inbox's horizontal category tabs must not
+    // toggle the bar.
+    if (n.metrics.axis != Axis.vertical) return false;
+    switch (n.direction) {
+      case ScrollDirection.reverse:
+        // Keep the bar when the content barely scrolls (nothing to gain).
+        if (n.metrics.maxScrollExtent > kBottomNavigationBarHeight) {
+          _navVisible.value = false;
+        }
+      case ScrollDirection.forward:
+        _navVisible.value = true;
+      case ScrollDirection.idle:
+        if (n.metrics.extentBefore == 0) _navVisible.value = true;
+    }
+    return false;
   }
 
   @override
@@ -83,14 +130,38 @@ class AppShell extends StatelessWidget {
     }
 
     return Scaffold(
-      body: SafeArea(bottom: false, child: child),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (i) => context.go(_tabs[i].$1),
-        destinations: [
-          for (final d in destinations)
-            NavigationDestination(icon: d.icon, label: d.label),
-        ],
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: _onUserScroll,
+        child: SafeArea(bottom: false, child: child),
+      ),
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        valueListenable: _navVisible,
+        builder: (context, visible, bar) => TweenAnimationBuilder<double>(
+          tween: Tween(end: visible ? 1 : 0),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          // Shrinking a top-aligned box slides the bar down off screen while
+          // the body grows into the freed space.
+          builder: (context, factor, bar) => ClipRect(
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: factor,
+              child: bar,
+            ),
+          ),
+          child: bar,
+        ),
+        child: NavigationBar(
+          selectedIndex: _tabIndex,
+          onDestinationSelected: (i) {
+            _navVisible.value = true;
+            context.go(_tabs[i].$1);
+          },
+          destinations: [
+            for (final d in destinations)
+              NavigationDestination(icon: d.icon, label: d.label),
+          ],
+        ),
       ),
     );
   }

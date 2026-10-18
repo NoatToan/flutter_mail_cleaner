@@ -254,9 +254,11 @@ abstract final class AppTheme {
     );
   }
 
-  /// macOS uses the 13pt desktop scale; mobile uses the iOS 17pt body scale.
+  /// macOS uses the 13pt desktop scale; touch devices (incl. mobile web)
+  /// use a 15pt body — Gmail/Apple Mail list density. The full iOS 17pt
+  /// scale made dense rows (mail list, pills, tabs) overflow on phones.
   static TextTheme _textTheme(bool desktop, Color color) {
-    final s = desktop ? 1.0 : 17 / 13;
+    final s = desktop ? 1.0 : 15 / 13;
     TextStyle t(double size, FontWeight w, [double? height]) => TextStyle(
       fontSize: size * s,
       fontWeight: w,

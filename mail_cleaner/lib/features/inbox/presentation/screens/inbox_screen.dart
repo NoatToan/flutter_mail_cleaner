@@ -16,6 +16,7 @@ import 'package:ai_smart_mail/features/inbox/presentation/widgets/inbox_list_hea
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_bulk_actions.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_detail_view.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_list_tile.dart';
+import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_swipe_actions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,6 +52,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   String? _lastBatchId;
   final Set<int> _markedRead = {};
   List<MessageListItem>? _lastItems;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -79,6 +81,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -93,10 +96,15 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   );
 
   void _onScroll() {
-    if (_scrollController.position.pixels >
-        _scrollController.position.maxScrollExtent - 200) {
-      ref.read(inboxPageSizeProvider(_query).notifier).loadMore();
-    }
+    final position = _scrollController.position;
+    if (position.pixels < position.maxScrollExtent - 600) return;
+    // Only ask for the next page once the current one came back full —
+    // otherwise every scroll tick near the bottom bumped the limit again
+    // (hundreds of rows re-queried in one fling: jank + memory on phones).
+    final pageSize = ref.read(inboxPageSizeProvider(_query));
+    final loaded = ref.read(inboxMessagesProvider(_query)).value?.length ?? 0;
+    if (loaded < pageSize) return;
+    ref.read(inboxPageSizeProvider(_query).notifier).loadMore();
   }
 
   void _maybeMarkRead(int? id) {
@@ -107,9 +115,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     );
   }
 
+  /// Debounced: each keystroke used to start a fresh FTS query.
   void _setSearch(String value) {
-    clearMailSelection(ref);
-    setState(() => _search = value);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted || value == _search) return;
+      clearMailSelection(ref);
+      setState(() => _search = value);
+    });
   }
 
   List<String>? get _accountIds =>
@@ -195,12 +208,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           LogicalKeyboardKey.keyU,
           meta: true,
           shift: true,
-        ): () => unawaited(_markRead(_shortcutTargetIds(), read: false)),
+        ): () =>
+            unawaited(_markRead(_shortcutTargetIds(), read: false)),
         const SingleActivator(
           LogicalKeyboardKey.keyR,
           meta: true,
           shift: true,
-        ): () => unawaited(_markRead(_shortcutTargetIds(), read: true)),
+        ): () =>
+            unawaited(_markRead(_shortcutTargetIds(), read: true)),
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true): _undoLast,
       },
       child: Focus(
@@ -287,6 +302,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             onArchive: () => unawaited(_archive([widget.selectedMessageId!])),
             onTrash: () => unawaited(_trash([widget.selectedMessageId!])),
             showBack: true,
+            compact: true,
             onBack: () => context.go(_locationFor()),
           ),
           const Divider(height: 1),
@@ -344,9 +360,8 @@ class _ReadingPane extends ConsumerWidget {
       return Center(
         child: Text(
           'inbox.select_a_message'.tr(),
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: tokens.protected),
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: tokens.protected),
         ),
       );
     }
@@ -360,6 +375,7 @@ class _ReadingPane extends ConsumerWidget {
           onArchive: onArchive,
           onTrash: onTrash,
           showBack: false,
+          compact: false,
           onBack: () {},
         ),
         const Divider(height: 1),
@@ -481,44 +497,91 @@ class _ListPane extends ConsumerWidget {
     // this provider itself would touch the database on every row build just
     // to populate its mostly-hidden "Gắn tag" context-menu entry.
     final tags = ref.watch(allTagsProvider).value ?? const <TagOption>[];
+    final surface = Theme.of(context).colorScheme.surface;
 
     return ColoredBox(
-      color: Theme.of(context).colorScheme.surface,
-      child: Column(
-        children: [
-          InboxListHeader(
-            accountId: accountIds?.first,
-            filter: filter,
-            tagKey: tagKey,
-            searchController: searchController,
-            onSearchChanged: onSearchChanged,
-            loadedIds: [for (final m in items) m.id],
+      color: surface,
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          // Search + category tabs collapse while scrolling down the list
+          // and slide back on any scroll up, so a phone shows more mail.
+          SliverFloatingHeader(
+            snapMode: FloatingHeaderSnapMode.scroll,
+            child: ColoredBox(
+              color: surface,
+              child: InboxSearchHeader(
+                accountId: accountIds?.first,
+                filter: filter,
+                tagKey: tagKey,
+                searchController: searchController,
+                onSearchChanged: onSearchChanged,
+              ),
+            ),
           ),
-          if (filter == null && tagKey == null) _AiBanner(accountIds: accountIds),
-          Expanded(
-            child: itemsAsync.when(
-              data: (items) => AppEmptyState(
-                isEmpty: items.isEmpty,
-                title: 'inbox.empty_title'.tr(),
-                child: ListView.builder(
-                  controller: scrollController,
+          // The toolbar stays: filters and bulk actions remain reachable.
+          PinnedHeaderSliver(
+            child: ColoredBox(
+              color: surface,
+              child: InboxListToolbar(
+                accountId: accountIds?.first,
+                filter: filter,
+                tagKey: tagKey,
+                loadedIds: [for (final m in items) m.id],
+              ),
+            ),
+          ),
+          if (filter == null && tagKey == null)
+            SliverToBoxAdapter(child: _AiBanner(accountIds: accountIds)),
+          ...itemsAsync.when(
+            data: (items) => [
+              if (items.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppEmptyState(
+                    isEmpty: true,
+                    title: 'inbox.empty_title'.tr(),
+                    child: const SizedBox.shrink(),
+                  ),
+                )
+              else
+                SliverList.builder(
                   itemCount: items.length,
+                  // Lets a row keep its state (swipe offset, hover) when
+                  // rows above it are archived and the list shifts.
+                  findChildIndexCallback: (key) {
+                    final id = (key as ValueKey<int>).value;
+                    final i = items.indexWhere((m) => m.id == id);
+                    return i < 0 ? null : i;
+                  },
                   itemBuilder: (context, i) {
                     final item = items[i];
-                    return MailListTile(
+                    return MailSwipeActions(
+                      key: ValueKey<int>(item.id),
                       item: item,
-                      selected: item.id == selectedMessageId,
-                      onTap: () => onSelect(item.id),
-                      orderedIds: () => [for (final m in items) m.id],
-                      tags: tags,
+                      child: MailListTile(
+                        item: item,
+                        selected: item.id == selectedMessageId,
+                        onTap: () => onSelect(item.id),
+                        orderedIds: () => [for (final m in items) m.id],
+                        tags: tags,
+                      ),
                     );
                   },
                 ),
+            ],
+            loading: () => const [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator()),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) =>
-                  AppErrorState(message: 'common.error_generic'.tr()),
-            ),
+            ],
+            error: (_, _) => [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppErrorState(message: 'common.error_generic'.tr()),
+              ),
+            ],
           ),
         ],
       ),
@@ -535,6 +598,7 @@ class _DetailToolbar extends ConsumerWidget {
     required this.onArchive,
     required this.onTrash,
     required this.showBack,
+    required this.compact,
     required this.onBack,
   });
 
@@ -545,12 +609,106 @@ class _DetailToolbar extends ConsumerWidget {
   final VoidCallback onArchive;
   final VoidCallback onTrash;
   final bool showBack;
+
+  /// Phone width: nine 44pt buttons don't fit, so prev/next and
+  /// unsubscribe move into a "more" menu.
+  final bool compact;
   final VoidCallback onBack;
+
+  Future<void> _unsubscribe(
+    BuildContext context,
+    WidgetRef ref,
+    MessageDetail detail,
+  ) async {
+    final batch = await ref
+        .read(mailActionsProvider)
+        .unsubscribe(detail.row.fromEmail);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          batch.status == ActionStatus.done
+              ? 'inbox.unsubscribed_ok'.tr()
+              : 'inbox.unsubscribed_failed'.tr(),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppTokens.of(context);
     final detail = ref.watch(messageDetailProvider(messageId)).value;
+    final reply = IconButton(
+      tooltip: 'inbox.reply'.tr(),
+      icon: const Icon(Icons.reply_outlined),
+      onPressed: detail == null
+          ? null
+          : () => unawaited(showComposeDialog(context, detail: detail)),
+    );
+    final archive = IconButton(
+      tooltip: 'inbox.archive'.tr(),
+      icon: const Icon(Icons.archive_outlined),
+      onPressed: onArchive,
+    );
+    final trash = IconButton(
+      tooltip: 'inbox.trash'.tr(),
+      icon: Icon(Icons.delete_outline, color: tokens.danger),
+      onPressed: onTrash,
+    );
+    if (compact) {
+      return Container(
+        height: kToolbarHeight,
+        color: tokens.toolbar,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: 'inbox.back_to_inbox'.tr(),
+              icon: const Icon(Icons.arrow_back),
+              onPressed: onBack,
+            ),
+            const Spacer(),
+            archive,
+            trash,
+            _TagMenuButton(messageId: messageId),
+            reply,
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'inbox.more_actions'.tr(),
+              icon: const Icon(Icons.more_vert),
+              onSelected: (action) => action(),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: onPrev,
+                  child: ListTile(
+                    leading: const Icon(Icons.keyboard_arrow_up),
+                    title: Text('inbox.previous'.tr()),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: onNext,
+                  child: ListTile(
+                    leading: const Icon(Icons.keyboard_arrow_down),
+                    title: Text('inbox.next'.tr()),
+                  ),
+                ),
+                if (detail != null)
+                  PopupMenuItem(
+                    value: () => unawaited(_unsubscribe(context, ref, detail)),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.unsubscribe_outlined,
+                        color: tokens.review,
+                      ),
+                      title: Text('inbox.unsubscribe'.tr()),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
     return Container(
       height: AppTheme.isDesktop ? AppPane.toolbarHeight : kToolbarHeight,
       color: tokens.toolbar,
@@ -574,45 +732,17 @@ class _DetailToolbar extends ConsumerWidget {
             onPressed: onNext,
           ),
           const SizedBox(width: AppSpace.xs),
-          IconButton(
-            tooltip: 'inbox.archive'.tr(),
-            icon: const Icon(Icons.archive_outlined),
-            onPressed: onArchive,
-          ),
-          IconButton(
-            tooltip: 'inbox.trash'.tr(),
-            icon: Icon(Icons.delete_outline, color: tokens.danger),
-            onPressed: onTrash,
-          ),
+          archive,
+          trash,
           _TagMenuButton(messageId: messageId),
           IconButton(
             tooltip: 'inbox.unsubscribe'.tr(),
             icon: Icon(Icons.unsubscribe_outlined, color: tokens.review),
             onPressed: detail == null
                 ? null
-                : () async {
-                    final batch = await ref
-                        .read(mailActionsProvider)
-                        .unsubscribe(detail.row.fromEmail);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          batch.status == ActionStatus.done
-                              ? 'inbox.unsubscribed_ok'.tr()
-                              : 'inbox.unsubscribed_failed'.tr(),
-                        ),
-                      ),
-                    );
-                  },
+                : () => unawaited(_unsubscribe(context, ref, detail)),
           ),
-          IconButton(
-            tooltip: 'inbox.reply'.tr(),
-            icon: const Icon(Icons.reply_outlined),
-            onPressed: detail == null
-                ? null
-                : () => unawaited(showComposeDialog(context, detail: detail)),
-          ),
+          reply,
         ],
       ),
     );
@@ -628,7 +758,9 @@ class _TagMenuButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allTags = ref.watch(allTagsProvider).value ?? const <TagOption>[];
     final detail = ref.watch(messageDetailProvider(messageId)).value;
-    final assignedIds = {for (final t in detail?.tags ?? const <TagRow>[]) t.id};
+    final assignedIds = {
+      for (final t in detail?.tags ?? const <TagRow>[]) t.id,
+    };
     return PopupMenuButton<TagOption>(
       tooltip: 'inbox.add_tag'.tr(),
       icon: const Icon(Icons.sell_outlined),
@@ -661,8 +793,7 @@ class _AiBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final promoCount =
-        ref.watch(promotionCountProvider(accountIds)).value ?? 0;
+    final promoCount = ref.watch(promotionCountProvider(accountIds)).value ?? 0;
     if (promoCount == 0) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final tokens = AppTokens.of(context);

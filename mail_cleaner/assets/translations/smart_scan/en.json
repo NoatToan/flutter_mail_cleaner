@@ -15,10 +15,12 @@
       "description_with_senders": "{senders} · {count} mail",
       "senders_and_more": "{senders} and {more} others",
       "oldPromo": {
-        "title": "Promos older than 6 months"
+        "title": "Promos older than 6 months",
+        "description": "Promotions older than 6 months · {count} mail"
       },
       "unreadNewsletter": {
-        "title": "Unread newsletters"
+        "title": "Unread newsletters",
+        "description": "Newsletters you never open · {count} mail"
       },
       "expiredOtp": {
         "title": "Expired OTP",

@@ -19,7 +19,8 @@ class HealthScoreRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final track = trackColor ?? Theme.of(context).colorScheme.surfaceContainerHighest;
+    final track =
+        trackColor ?? Theme.of(context).colorScheme.surfaceContainerHighest;
     return SizedBox(
       width: size,
       height: size,
@@ -34,22 +35,30 @@ class HealthScoreRing extends StatelessWidget {
               trackColor: track,
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$score',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          // Scaled down to the ring's inner area so the larger touch type
+          // scale can't push "/100" over the arc.
+          Padding(
+            padding: EdgeInsets.all(size * 0.2),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$score',
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700, height: 1.1),
+                  ),
+                  Text(
+                    '/100',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '/100',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
