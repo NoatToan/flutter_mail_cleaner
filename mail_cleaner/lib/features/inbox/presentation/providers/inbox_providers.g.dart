@@ -51,6 +51,64 @@ final class InboxRepositoryProvider
 
 String _$inboxRepositoryHash() => r'eb84fc35442743841057b3b1ae679e0655734fee';
 
+/// The list pane's sort order — survives a restart (PersistedState).
+
+@ProviderFor(InboxSortSetting)
+final inboxSortSettingProvider = InboxSortSettingProvider._();
+
+/// The list pane's sort order — survives a restart (PersistedState).
+final class InboxSortSettingProvider
+    extends $NotifierProvider<InboxSortSetting, InboxSort> {
+  /// The list pane's sort order — survives a restart (PersistedState).
+  InboxSortSettingProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'inboxSortSettingProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$inboxSortSettingHash();
+
+  @$internal
+  @override
+  InboxSortSetting create() => InboxSortSetting();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(InboxSort value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<InboxSort>(value),
+    );
+  }
+}
+
+String _$inboxSortSettingHash() => r'b4fe96b6e1f6a3221bd23099c7a3d58d9c1c8d34';
+
+/// The list pane's sort order — survives a restart (PersistedState).
+
+abstract class _$InboxSortSetting extends $Notifier<InboxSort> {
+  InboxSort build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<InboxSort, InboxSort>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<InboxSort, InboxSort>,
+              InboxSort,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// How many rows the list pane currently asks for — bumped by [loadMore] as
 /// the user scrolls (drift `limit`-based paging, TECH_SPEC's 100k-row note).
 
@@ -214,7 +272,7 @@ final class InboxMessagesProvider
   }
 }
 
-String _$inboxMessagesHash() => r'094dd3e5d9e173e10f1178c7cf7b185ce696af7b';
+String _$inboxMessagesHash() => r'343f9ee31fc8b1f6cfd4dfe9664c1aa5db91cd60';
 
 final class InboxMessagesFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<MessageListItem>>, InboxQuery> {
@@ -232,6 +290,96 @@ final class InboxMessagesFamily extends $Family
 
   @override
   String toString() => r'inboxMessagesProvider';
+}
+
+/// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+
+@ProviderFor(unreadByCategory)
+final unreadByCategoryProvider = UnreadByCategoryFamily._();
+
+/// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+
+final class UnreadByCategoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<CategoryFilter, int>>,
+          Map<CategoryFilter, int>,
+          Stream<Map<CategoryFilter, int>>
+        >
+    with
+        $FutureModifier<Map<CategoryFilter, int>>,
+        $StreamProvider<Map<CategoryFilter, int>> {
+  /// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+  UnreadByCategoryProvider._({
+    required UnreadByCategoryFamily super.from,
+    required List<String>? super.argument,
+  }) : super(
+         retry: null,
+         name: r'unreadByCategoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$unreadByCategoryHash();
+
+  @override
+  String toString() {
+    return r'unreadByCategoryProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<CategoryFilter, int>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<CategoryFilter, int>> create(Ref ref) {
+    final argument = this.argument as List<String>?;
+    return unreadByCategory(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UnreadByCategoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$unreadByCategoryHash() => r'a4e8f2b07fbea65c9dd90c7ef69fadd79769139f';
+
+/// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+
+final class UnreadByCategoryFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<Map<CategoryFilter, int>>,
+          List<String>?
+        > {
+  UnreadByCategoryFamily._()
+    : super(
+        retry: null,
+        name: r'unreadByCategoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Unread inbox mail per category tab (Gmail-style "N mới" counts).
+
+  UnreadByCategoryProvider call(List<String>? accountIds) =>
+      UnreadByCategoryProvider._(argument: accountIds, from: this);
+
+  @override
+  String toString() => r'unreadByCategoryProvider';
 }
 
 @ProviderFor(promotionCount)

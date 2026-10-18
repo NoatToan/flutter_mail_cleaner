@@ -1,6 +1,7 @@
 import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
 import 'package:ai_smart_mail/core/utils/throttle_latest.dart';
+import 'package:ai_smart_mail/features/inbox/domain/inbox_sort.dart';
 import 'package:drift/drift.dart';
 
 /// One row of the mail list (list pane / search results). A read model, not
@@ -18,6 +19,8 @@ class MessageListItem {
     required this.date,
     required this.isSeen,
     required this.category,
+    this.size = 0,
+    this.tagKey,
     this.tagName,
     this.tagColorKey,
   });
@@ -32,6 +35,8 @@ class MessageListItem {
   final DateTime date;
   final bool isSeen;
   final MailCategory? category;
+  final int size;
+  final String? tagKey;
   final String? tagName;
   final String? tagColorKey;
 
@@ -46,6 +51,8 @@ class MessageListItem {
     date: date,
     isSeen: isSeen,
     category: category,
+    size: size,
+    tagKey: tag?.key,
     tagName: tag?.name,
     tagColorKey: tag?.colorKey,
   );
@@ -108,6 +115,7 @@ class InboxRepository {
     CategoryFilter? categoryFilter,
     String? tagKey,
     String search = '',
+    InboxSort sort = InboxSort.newest,
     int limit = 100,
   }) {
     if (search.trim().isNotEmpty) {
@@ -118,14 +126,61 @@ class InboxRepository {
           tagKey: tagKey,
           search: search,
           limit: limit,
-        ),
+        ).then((items) => _sortSearchResults(items, sort)),
       );
     }
     return _watchFiltered(
       accountIds: accountIds,
       categoryFilter: categoryFilter,
       tagKey: tagKey,
+      sort: sort,
       limit: limit,
+    );
+  }
+
+  /// SQL ordering for [sort]; every order ends on date desc + id so equal
+  /// keys stay stable while the list live-updates.
+  List<OrderingTerm> _orderFor(InboxSort sort) {
+    final m = _db.messages;
+    return [
+      ...switch (sort) {
+        InboxSort.newest => <OrderingTerm>[],
+        InboxSort.oldest => [OrderingTerm.asc(m.date)],
+        InboxSort.unreadFirst => [OrderingTerm.asc(m.isSeen)],
+        InboxSort.sender => [
+          OrderingTerm.asc(
+            const CustomExpression<String>(
+              "LOWER(COALESCE(NULLIF(messages.from_name, ''), "
+              'messages.from_email))',
+            ),
+          ),
+        ],
+        InboxSort.largest => [OrderingTerm.desc(m.size)],
+      },
+      OrderingTerm.desc(m.date),
+      OrderingTerm.desc(m.id),
+    ];
+  }
+
+  /// Search keeps FTS relevance for the default order; any explicit sort
+  /// re-orders the (already capped) result page in memory.
+  List<MessageListItem> _sortSearchResults(
+    List<MessageListItem> items,
+    InboxSort sort,
+  ) {
+    if (sort == InboxSort.newest) return items;
+    int byDate(MessageListItem a, MessageListItem b) => b.date.compareTo(a.date);
+    String senderOf(MessageListItem i) =>
+        (i.fromName.isEmpty ? i.fromEmail : i.fromName).toLowerCase();
+    return [...items]..sort(
+      (a, b) => switch (sort) {
+        InboxSort.newest => byDate(a, b),
+        InboxSort.oldest => a.date.compareTo(b.date),
+        InboxSort.unreadFirst =>
+          a.isSeen == b.isSeen ? byDate(a, b) : (a.isSeen ? 1 : -1),
+        InboxSort.sender => senderOf(a).compareTo(senderOf(b)),
+        InboxSort.largest => b.size.compareTo(a.size),
+      },
     );
   }
 
@@ -140,6 +195,7 @@ class InboxRepository {
     required List<String>? accountIds,
     required CategoryFilter? categoryFilter,
     required String? tagKey,
+    required InboxSort sort,
     required int limit,
   }) async* {
     final tagId = tagKey == null ? null : await _tagIdFor(tagKey);
@@ -172,7 +228,7 @@ class InboxRepository {
       );
     }
     query
-      ..orderBy([OrderingTerm.desc(_db.messages.date)])
+      ..orderBy(_orderFor(sort))
       ..limit(limit);
 
     yield* query.watch().throttleLatest().asyncMap((rows) async {
@@ -245,6 +301,7 @@ class InboxRepository {
     date: m.date,
     isSeen: m.isSeen,
     category: m.category,
+    size: m.size,
   );
 
   Future<List<MessageListItem>> _attachPrimaryTags(
@@ -285,6 +342,44 @@ class InboxRepository {
       query.where(_db.messages.accountId.isIn(accountIds));
     }
     return query.watchSingle().throttleLatest().map((r) => r.read(count) ?? 0);
+  }
+
+  /// Unread inbox mail per category tab.
+  Stream<Map<CategoryFilter, int>> watchUnreadByCategory({
+    List<String>? accountIds,
+  }) {
+    final count = _db.messages.id.count();
+    final category = _db.messages.category;
+    final query =
+        _db.selectOnly(_db.messages).join([
+            innerJoin(
+              _db.folders,
+              _db.folders.id.equalsExp(_db.messages.folderId),
+            ),
+          ])
+          ..addColumns([category, count])
+          ..where(
+            _db.folders.role.equalsValue(FolderRole.inbox) &
+                _db.messages.isSeen.equals(false),
+          )
+          ..groupBy([category]);
+    if (accountIds != null) {
+      query.where(_db.messages.accountId.isIn(accountIds));
+    }
+    return query.watch().throttleLatest().map((rows) {
+      final byCategory = <MailCategory, int>{
+        for (final r in rows)
+          if (r.readWithConverter(category) case final MailCategory c)
+            c: r.read(count) ?? 0,
+      };
+      return {
+        for (final filter in CategoryFilter.values)
+          filter: filter.categories.fold(
+            0,
+            (sum, c) => sum + (byCategory[c] ?? 0),
+          ),
+      };
+    });
   }
 
   Stream<MessageDetail?> watchDetail(int messageId) {
