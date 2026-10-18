@@ -8,6 +8,7 @@ import 'package:ai_smart_mail/features/inbox/data/inbox_repository.dart';
 import 'package:ai_smart_mail/features/inbox/domain/inbox_sort.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/inbox_providers.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/mail_selection_provider.dart';
+import 'package:ai_smart_mail/features/inbox/presentation/widgets/compose_dialog.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_bulk_actions.dart';
 import 'package:ai_smart_mail/features/shell/presentation/providers/sidebar_providers.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -50,24 +51,37 @@ class InboxListHeader extends StatelessWidget {
             AppSpace.md,
             AppSpace.xs,
           ),
-          child: TextField(
-            controller: searchController,
-            onChanged: onSearchChanged,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, size: 18),
-              hintText: 'inbox.search_hint'.tr(),
-              isDense: true,
-              filled: true,
-              fillColor: tokens.subtleSurface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                borderSide: BorderSide.none,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: searchController,
+                  onChanged: onSearchChanged,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    hintText: 'inbox.search_hint'.tr(),
+                    isDense: true,
+                    filled: true,
+                    fillColor: tokens.subtleSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                borderSide: BorderSide.none,
+              const SizedBox(width: AppSpace.xs),
+              // Gmail's "Soạn thư", kept next to search.
+              IconButton.filledTonal(
+                tooltip: 'inbox.compose_title'.tr(),
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: () => unawaited(showComposeDialog(context)),
               ),
-            ),
+            ],
           ),
         ),
         _CategoryTabs(accountId: accountId, filter: filter, tagKey: tagKey),

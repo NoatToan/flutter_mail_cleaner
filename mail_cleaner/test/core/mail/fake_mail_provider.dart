@@ -1,4 +1,5 @@
 import 'package:ai_smart_mail/core/database/app_database.dart';
+import 'package:ai_smart_mail/core/mail/mail_credentials.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider_factory.dart';
 
@@ -53,7 +54,9 @@ class FakeMailProvider implements MailProvider {
         : all.where((m) => m.uid > afterUid).toList();
     final sorted = [...filtered]..sort((a, b) => b.uid.compareTo(a.uid));
     for (var i = 0; i < sorted.length; i += batchSize) {
-      final end = (i + batchSize > sorted.length) ? sorted.length : i + batchSize;
+      final end = (i + batchSize > sorted.length)
+          ? sorted.length
+          : i + batchSize;
       yield sorted.sublist(i, end);
     }
   }
@@ -103,4 +106,17 @@ class FakeMailProviderFactory implements MailProviderFactory {
 
   @override
   Future<MailProvider> create(AccountRow account) async => provider;
+
+  @override
+  MailProvider connectionFor({
+    required String host,
+    required int port,
+    required String email,
+    required MailCredentials credentials,
+    bool isGmail = false,
+  }) => provider;
+
+  @override
+  Future<MailCredentials> credentialsFor(AccountRow account) async =>
+      const MailCredentials.oauth('fake-token');
 }

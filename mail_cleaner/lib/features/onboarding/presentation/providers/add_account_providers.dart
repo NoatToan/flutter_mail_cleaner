@@ -9,7 +9,10 @@ import 'package:ai_smart_mail/core/mail/demo_mail_provider.dart'
 import 'package:ai_smart_mail/core/mail/google_oauth_flow.dart';
 import 'package:ai_smart_mail/core/mail/google_token_client.dart';
 import 'package:ai_smart_mail/core/mail/imap_mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/mail_credentials.dart';
+import 'package:ai_smart_mail/core/mail/mail_endpoints.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/mail_provider_factory.dart';
 import 'package:ai_smart_mail/core/mail/oauth_tokens.dart';
 import 'package:ai_smart_mail/core/mail/web_oauth_client.dart';
 import 'package:ai_smart_mail/core/mail/web_oauth_flow.dart';
@@ -115,7 +118,7 @@ String defaultHostFor(AddAccountOption option) => switch (option) {
   AddAccountOption.imap => '',
 };
 
-MailProviderType _providerTypeOf(AddAccountOption option) => switch (option) {
+MailProviderType providerTypeOf(AddAccountOption option) => switch (option) {
   AddAccountOption.gmail => MailProviderType.gmail,
   AddAccountOption.outlook => MailProviderType.outlook,
   AddAccountOption.icloud => MailProviderType.icloud,
@@ -157,13 +160,15 @@ class AddAccountController extends _$AddAccountController {
         ? defaultHostFor(option)
         : host;
     final resolvedPort = port ?? 993;
-    final provider = ImapMailProvider(
-      host: resolvedHost,
-      port: resolvedPort,
-      email: email,
-      password: password,
-      isGmail: option == AddAccountOption.gmail,
-    );
+    final provider = ref
+        .read(mailProviderFactoryProvider)
+        .connectionFor(
+          host: resolvedHost,
+          port: resolvedPort,
+          email: email,
+          credentials: MailCredentials.password(password),
+          isGmail: option == AddAccountOption.gmail,
+        );
     try {
       await provider.connect();
       await provider.disconnect();
@@ -177,20 +182,27 @@ class AddAccountController extends _$AddAccountController {
     }
 
     final accountId = _uuid.v4();
+    final type = providerTypeOf(option);
+    final smtp = defaultSmtpFor(type, imapHost: resolvedHost);
     final db = ref.read(appDatabaseProvider);
+    // Secret first: inserting the account flips `hasAccounts`, and sync may
+    // start before this method returns.
+    await ref.read(credentialsStoreProvider).savePassword(accountId, password);
     await db
         .into(db.accounts)
         .insert(
           AccountsCompanion.insert(
             id: accountId,
-            provider: _providerTypeOf(option),
+            provider: type,
             authKind: AuthKind.password,
             email: email,
             imapHost: Value(resolvedHost),
             imapPort: Value(resolvedPort),
+            smtpHost: Value(smtp.host),
+            smtpPort: Value(smtp.port),
           ),
         );
-    await ref.read(credentialsStoreProvider).savePassword(accountId, password);
+    if (!ref.mounted) return;
     state = state.copyWith(isConnecting: false, createdAccountIds: [accountId]);
   }
 
@@ -388,15 +400,43 @@ class AddAccountController extends _$AddAccountController {
       return;
     }
 
-    final db = ref.read(appDatabaseProvider);
     final type = result.provider.mailProvider;
+    final imapHost = defaultImapHostFor(type);
+    final smtp = defaultSmtpFor(type);
+    // Prove the token logs in over IMAP before anything is saved (UC-02).
+    try {
+      final probe = ref
+          .read(mailProviderFactoryProvider)
+          .connectionFor(
+            host: imapHost,
+            port: 993,
+            email: result.email,
+            credentials: MailCredentials.oauth(result.tokens.accessToken),
+            isGmail: type == MailProviderType.gmail,
+          );
+      await probe.connect();
+      await probe.disconnect();
+    } on MailFailure catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isConnecting: false,
+        errorMessage: e.message,
+        errorHintKey: loginErrorHintKey(e.message, host: imapHost),
+      );
+      return;
+    }
+
+    final db = ref.read(appDatabaseProvider);
     final reauthId = result.reauthAccountId;
     final existing =
         await (db.select(db.accounts)..where(
               (a) => reauthId != null
                   ? a.id.equals(reauthId)
                   : a.provider.equalsValue(type) &
-                        a.authKind.equalsValue(AuthKind.oauthApi) &
+                        a.authKind.isInValues([
+                          AuthKind.oauth,
+                          AuthKind.oauthApi,
+                        ]) &
                         a.email.equals(result.email),
             ))
             .getSingleOrNull();
@@ -413,17 +453,26 @@ class AddAccountController extends _$AddAccountController {
             AccountsCompanion.insert(
               id: accountId,
               provider: type,
-              authKind: AuthKind.oauthApi,
+              authKind: AuthKind.oauth,
               email: result.email,
+              imapHost: Value(imapHost),
+              smtpHost: Value(smtp.host),
+              smtpPort: Value(smtp.port),
             ),
           );
     } else {
+      // Also moves a legacy Gmail-API/Graph (`oauthApi`) account onto IMAP.
       await (db.update(
         db.accounts,
       )..where((a) => a.id.equals(accountId))).write(
-        const AccountsCompanion(
-          syncState: Value(SyncState.idle),
-          lastError: Value(null),
+        AccountsCompanion(
+          authKind: const Value(AuthKind.oauth),
+          imapHost: Value(imapHost),
+          imapPort: const Value(993),
+          smtpHost: Value(smtp.host),
+          smtpPort: Value(smtp.port),
+          syncState: const Value(SyncState.idle),
+          lastError: const Value(null),
         ),
       );
     }

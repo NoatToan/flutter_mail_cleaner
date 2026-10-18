@@ -11,6 +11,7 @@ import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
 import 'package:ai_smart_mail/features/inbox/data/inbox_repository.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/inbox_providers.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/mail_selection_provider.dart';
+import 'package:ai_smart_mail/features/inbox/presentation/widgets/compose_dialog.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/inbox_list_header.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_bulk_actions.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_detail_view.dart';
@@ -20,7 +21,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Unified inbox (design: Inbox.dc.html / MailDetail.dc.html). Expanded/large
 /// shows list + reading pane side by side; compact/medium shows one at a
@@ -611,15 +611,7 @@ class _DetailToolbar extends ConsumerWidget {
             icon: const Icon(Icons.reply_outlined),
             onPressed: detail == null
                 ? null
-                : () => launchUrl(
-                    Uri(
-                      scheme: 'mailto',
-                      path: detail.row.fromEmail,
-                      queryParameters: {
-                        'subject': 'Re: ${detail.row.subject}',
-                      },
-                    ),
-                  ),
+                : () => unawaited(showComposeDialog(context, detail: detail)),
           ),
         ],
       ),

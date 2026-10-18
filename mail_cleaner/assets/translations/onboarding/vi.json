@@ -60,11 +60,11 @@
     "error_outlook_oauth_required": "Outlook.com/Microsoft 365 đã tắt đăng nhập bằng mật khẩu qua IMAP. Cần đăng nhập Microsoft (OAuth) — tính năng này cần cấu hình OUTLOOK_CLIENT_ID.",
     "error_network": "Không kết nối được máy chủ mail. Kiểm tra mạng, host và cổng (IMAP thường là 993).",
     "error_server_said": "Máy chủ trả lời: {}",
-    "web_add_account_subtitle": "Đăng nhập bằng Google hoặc Microsoft. Mail được đồng bộ và phân tích ngay trong trình duyệt này, mật khẩu không bao giờ được chia sẻ với chúng tôi.",
+    "web_add_account_subtitle": "Kết nối qua IMAP/SMTP như app mail trên máy tính. Thông tin đăng nhập chỉ lưu trong trình duyệt này, không lưu trên máy chủ của chúng tôi.",
     "web_provider_not_configured": "Bản triển khai này chưa được cấu hình.",
-    "web_imap_desktop_only": "Cần dùng app macOS (trình duyệt không kết nối được IMAP).",
     "oauth_completing": "Đang hoàn tất đăng nhập…",
     "oauth_failed_title": "Không kết nối được hộp thư.",
-    "oauth_back_to_add": "Quay lại Thêm tài khoản"
+    "oauth_back_to_add": "Quay lại Thêm tài khoản",
+    "web_app_password_hint": "Email + app password"
   }
 }

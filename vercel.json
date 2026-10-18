@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "echo 'Flutter SDK is fetched by mail_cleaner/scripts/build_web.sh'",
+  "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "bash mail_cleaner/scripts/build_web.sh",
   "outputDirectory": "mail_cleaner/build/web",
   "rewrites": [
@@ -33,5 +33,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/mail.js": {
+      "maxDuration": 60
+    }
+  }
 }

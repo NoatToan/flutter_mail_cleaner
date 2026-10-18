@@ -100,8 +100,11 @@ class WebOAuthException implements Exception {
   String toString() => description ?? error;
 }
 
-/// Browser OAuth (authorization code + PKCE, full-page redirect) for the
-/// REST transports. The code exchange and refreshes go through this
+/// Tokens from the proxy plus the signed-in address (from the id_token).
+typedef WebTokenGrant = ({OAuthTokens tokens, String? email});
+
+/// Browser OAuth (authorization code + PKCE, full-page redirect) for
+/// Gmail and Outlook over IMAP/SMTP (XOAUTH2). The code exchange and refreshes go through this
 /// deployment's `/api/oauth-token` function, which holds the client secrets
 /// — the browser never sees them.
 class WebOAuthClient {
@@ -115,11 +118,18 @@ class WebOAuthClient {
   /// Same as `AppRoutes.oauthCallback` (core can't import app/).
   static const callbackPath = '/onboarding/oauth-callback';
 
-  static const googleScopes = ['https://www.googleapis.com/auth/gmail.modify'];
+  /// Full IMAP/SMTP access (`https://mail.google.com/`), plus the address
+  /// for the IMAP login via the id_token.
+  static const googleScopes = ['openid', 'email', 'https://mail.google.com/'];
+
+  /// Exchange Online IMAP + SMTP AUTH (works for Outlook.com and
+  /// Microsoft 365); `email` puts the address in the id_token.
   static const microsoftScopes = [
+    'openid',
+    'email',
     'offline_access',
-    'User.Read',
-    'Mail.ReadWrite',
+    'https://outlook.office.com/IMAP.AccessAsUser.All',
+    'https://outlook.office.com/SMTP.Send',
   ];
 
   String get redirectUri => origin.replace(path: callbackPath).toString();
@@ -189,7 +199,7 @@ class WebOAuthClient {
     };
   }
 
-  Future<OAuthTokens> exchangeCode(PendingWebOAuth pending, String code) =>
+  Future<WebTokenGrant> exchangeCode(PendingWebOAuth pending, String code) =>
       _token({
         'provider': pending.provider.name,
         'grant_type': 'authorization_code',
@@ -198,14 +208,16 @@ class WebOAuthClient {
         'redirect_uri': redirectUri,
       });
 
-  Future<OAuthTokens> refresh(WebOAuthProvider provider, String refreshToken) =>
-      _token({
-        'provider': provider.name,
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshToken,
-      });
+  Future<OAuthTokens> refresh(
+    WebOAuthProvider provider,
+    String refreshToken,
+  ) async => (await _token({
+    'provider': provider.name,
+    'grant_type': 'refresh_token',
+    'refresh_token': refreshToken,
+  })).tokens;
 
-  Future<OAuthTokens> _token(Map<String, String> body) async {
+  Future<WebTokenGrant> _token(Map<String, String> body) async {
     try {
       final response = await _dio.postUri<Object?>(
         origin.replace(path: '/api/oauth-token'),
@@ -216,12 +228,15 @@ class WebOAuthClient {
         ),
       );
       final data = response.data! as Map<String, dynamic>;
-      return OAuthTokens(
-        accessToken: data['access_token'] as String,
-        refreshToken: data['refresh_token'] as String?,
-        accessTokenExpiry: DateTime.now().add(
-          Duration(seconds: (data['expires_in'] as num?)?.toInt() ?? 3600),
+      return (
+        tokens: OAuthTokens(
+          accessToken: data['access_token'] as String,
+          refreshToken: data['refresh_token'] as String?,
+          accessTokenExpiry: DateTime.now().add(
+            Duration(seconds: (data['expires_in'] as num?)?.toInt() ?? 3600),
+          ),
         ),
+        email: data['email'] as String?,
       );
     } on DioException catch (e) {
       final data = e.response?.data;

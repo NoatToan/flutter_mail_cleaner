@@ -1,0 +1,17 @@
+{
+  "name": "ai-smart-mail-web-api",
+  "private": true,
+  "description": "Vercel functions for the web build: OAuth token proxy and the IMAP/SMTP bridge (api/).",
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test \"api/**/*.test.js\""
+  },
+  "dependencies": {
+    "imapflow": "^2.5.2",
+    "mailparser": "^3.9.40",
+    "nodemailer": "^10.1.2"
+  }
+}

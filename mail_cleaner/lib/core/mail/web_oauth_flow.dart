@@ -1,12 +1,8 @@
 import 'dart:convert';
 
-import 'package:ai_smart_mail/core/mail/gmail_api_mail_provider.dart';
-import 'package:ai_smart_mail/core/mail/graph_mail_provider.dart';
 import 'package:ai_smart_mail/core/mail/oauth_tokens.dart';
-import 'package:ai_smart_mail/core/mail/rest_mail_http.dart';
 import 'package:ai_smart_mail/core/mail/web_oauth_client.dart';
 import 'package:ai_smart_mail/core/storage/credentials_store.dart';
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -36,15 +32,12 @@ class WebOAuthFlow {
   WebOAuthFlow({
     required this._client,
     required this._credentials,
-    Dio? dio,
     Future<bool> Function(Uri)? openUrl,
-  }) : _dio = dio ?? Dio(),
-       _openUrl =
+  }) : _openUrl =
            openUrl ?? ((uri) => launchUrl(uri, webOnlyWindowName: '_self'));
 
   final WebOAuthClient _client;
   final CredentialsStore _credentials;
-  final Dio _dio;
   final Future<bool> Function(Uri) _openUrl;
 
   Future<void> start(
@@ -90,41 +83,20 @@ class WebOAuthFlow {
         description: 'Phản hồi đăng nhập không hợp lệ, vui lòng thử lại.',
       );
     }
-    final tokens = await _client.exchangeCode(pending, code);
+    final grant = await _client.exchangeCode(pending, code);
+    final email = grant.email;
+    if (email == null) {
+      throw const WebOAuthException(
+        'no_email',
+        description: 'Không đọc được địa chỉ email của tài khoản này.',
+      );
+    }
     return WebOAuthResult(
       provider: pending.provider,
-      email: await _mailboxAddress(pending.provider, tokens.accessToken),
-      tokens: tokens,
+      email: email,
+      tokens: grant.tokens,
       reauthAccountId: pending.reauthAccountId,
     );
-  }
-
-  /// Also proves the token can read mail before anything is saved (UC-02).
-  Future<String> _mailboxAddress(
-    WebOAuthProvider provider,
-    String accessToken,
-  ) async {
-    final http = RestMailHttp(_dio, accessToken: accessToken);
-    switch (provider) {
-      case WebOAuthProvider.google:
-        final profile = await http.get(
-          '${GmailApiMailProvider.baseUrl}/profile',
-        );
-        return (profile['emailAddress'] as String).toLowerCase();
-      case WebOAuthProvider.microsoft:
-        final me = await http.get(
-          GraphMailProvider.baseUrl,
-          query: {r'$select': 'mail,userPrincipalName'},
-        );
-        // Probe the mailbox itself: personal accounts without Outlook.com
-        // mail, or tenants without Exchange Online, fail here.
-        await http.get(
-          '${GraphMailProvider.baseUrl}/mailFolders/inbox',
-          query: {r'$select': 'id'},
-        );
-        return ((me['mail'] as String?) ?? (me['userPrincipalName'] as String))
-            .toLowerCase();
-    }
   }
 }
 

@@ -76,6 +76,20 @@ class TagOption {
   final String colorKey;
 }
 
+/// An account that can send mail (real login — not the demo mailbox), for
+/// the compose dialog's "Từ" picker.
+class SendableAccount {
+  const SendableAccount({
+    required this.id,
+    required this.email,
+    required this.provider,
+  });
+
+  final String id;
+  final String email;
+  final MailProviderType provider;
+}
+
 /// One folder row for the Mailboxes screen — see [TagOption] for why this
 /// isn't `FolderRow` directly.
 class AccountFolderInfo {
@@ -423,6 +437,23 @@ class InboxRepository {
             (rows) => [
               for (final f in rows)
                 AccountFolderInfo(role: f.role, totalCount: f.totalCount),
+            ],
+          );
+
+  Stream<List<SendableAccount>> watchSendableAccounts() =>
+      (_db.select(_db.accounts)
+            ..where(
+              (a) =>
+                  a.authKind.equalsValue(AuthKind.none).not() &
+                  a.provider.equalsValue(MailProviderType.demo).not(),
+            )
+            ..orderBy([(a) => OrderingTerm.asc(a.createdAt)]))
+          .watch()
+          .throttleLatest()
+          .map(
+            (rows) => [
+              for (final a in rows)
+                SendableAccount(id: a.id, email: a.email, provider: a.provider),
             ],
           );
 

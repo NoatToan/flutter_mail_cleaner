@@ -1,5 +1,7 @@
 import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
+import 'package:ai_smart_mail/core/mail/mail_provider.dart';
+import 'package:ai_smart_mail/core/mail/mail_provider_factory.dart';
 import 'package:ai_smart_mail/core/mail/oauth_tokens.dart';
 import 'package:ai_smart_mail/core/mail/web_oauth_client.dart';
 import 'package:ai_smart_mail/core/mail/web_oauth_flow.dart';
@@ -11,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../core/mail/fake_mail_provider.dart';
 
 class MockWebOAuthFlow extends Mock implements WebOAuthFlow;
 
@@ -64,6 +68,7 @@ void main() {
     late AppDatabase db;
     late MockWebOAuthFlow flow;
     late ProviderContainer container;
+    late FakeMailProvider imap;
     final callback = Uri.parse(
       'https://mail.test/onboarding/oauth-callback?code=c&state=s',
     );
@@ -72,11 +77,15 @@ void main() {
       FlutterSecureStorage.setMockInitialValues({});
       db = AppDatabase.forTesting(NativeDatabase.memory());
       flow = MockWebOAuthFlow();
+      imap = FakeMailProvider();
       container =
           ProviderContainer.test(
               overrides: [
                 appDatabaseProvider.overrideWithValue(db),
                 webOAuthFlowProvider.overrideWithValue(flow),
+                mailProviderFactoryProvider.overrideWithValue(
+                  FakeMailProviderFactory(imap),
+                ),
               ],
             )
             // Keep the auto-dispose controller alive between awaits.
@@ -92,7 +101,7 @@ void main() {
       reauthAccountId: reauthAccountId,
     );
 
-    test('creates an oauthApi account and stores its tokens', () async {
+    test('checks the IMAP login, then saves an OAuth account', () async {
       when(() => flow.complete(callback)).thenAnswer((_) async => result());
 
       await container
@@ -101,8 +110,12 @@ void main() {
 
       final account = await db.select(db.accounts).getSingle();
       expect(account.provider, MailProviderType.outlook);
-      expect(account.authKind, AuthKind.oauthApi);
+      expect(account.authKind, AuthKind.oauth);
       expect(account.email, 'me@outlook.com');
+      expect(account.imapHost, 'outlook.office365.com');
+      expect(account.smtpHost, 'smtp.office365.com');
+      expect(account.smtpPort, 587);
+      expect(imap.connectCount, 1);
       expect(
         await container
             .read(credentialsStoreProvider)
@@ -136,6 +149,8 @@ void main() {
 
       final accounts = await db.select(db.accounts).get();
       expect(accounts, hasLength(1));
+      // A legacy Gmail-API/Graph account moves onto IMAP.
+      expect(accounts.single.authKind, AuthKind.oauth);
       expect(accounts.single.syncState, SyncState.idle);
       expect(accounts.single.lastError, isNull);
       expect(container.read(addAccountControllerProvider).reconnected, isTrue);
@@ -153,6 +168,21 @@ void main() {
       final state = container.read(addAccountControllerProvider);
       expect(state.errorMessage, isNotNull);
       expect(state.isConnecting, isFalse);
+    });
+
+    test('a failed IMAP login saves nothing', () async {
+      when(() => flow.complete(callback)).thenAnswer((_) async => result());
+      imap.failConnectOnce = const MailFailure.authentication('AUTH failed');
+
+      await container
+          .read(addAccountControllerProvider.notifier)
+          .completeWebOAuth(callback);
+
+      expect(await db.select(db.accounts).get(), isEmpty);
+      expect(
+        container.read(addAccountControllerProvider).errorMessage,
+        'AUTH failed',
+      );
     });
   });
 }
