@@ -381,6 +381,10 @@ class AddAccountController extends _$AddAccountController {
       }
       createdIds.add(id);
     }
+    // The first insert flips `hasAccounts`, so the router may already have
+    // left Welcome and disposed this controller (sync is started by
+    // sync_providers for the new accounts either way).
+    if (!ref.mounted) return;
     state = state.copyWith(isConnecting: false, createdAccountIds: createdIds);
   }
 }

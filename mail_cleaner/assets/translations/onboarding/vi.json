@@ -59,6 +59,8 @@
     "error_icloud_app_password": "iCloud cần Mật khẩu cho ứng dụng, không phải mật khẩu Apple ID. Tạo tại account.apple.com › Đăng nhập và bảo mật › Mật khẩu cho ứng dụng.",
     "error_outlook_oauth_required": "Outlook.com/Microsoft 365 đã tắt đăng nhập bằng mật khẩu qua IMAP. Cần đăng nhập Microsoft (OAuth) — tính năng này cần cấu hình OUTLOOK_CLIENT_ID.",
     "error_network": "Không kết nối được máy chủ mail. Kiểm tra mạng, host và cổng (IMAP thường là 993).",
-    "error_server_said": "Máy chủ trả lời: {}"
+    "error_server_said": "Máy chủ trả lời: {}",
+    "web_unsupported_title": "Bản web chưa kết nối được hộp thư thật",
+    "web_unsupported_body": "Trình duyệt không mở được kết nối IMAP trực tiếp. Hãy dùng app macOS để kết nối Gmail, Outlook, iCloud — hoặc dùng thử hộp thư mẫu ngay trên web."
   }
 }

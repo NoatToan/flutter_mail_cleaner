@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,7 +10,7 @@ part 'credentials_store.g.dart';
 class CredentialsStore {
   CredentialsStore()
     : _storage = FlutterSecureStorage(
-        mOptions: Platform.isMacOS
+        mOptions: defaultTargetPlatform == TargetPlatform.macOS && !kIsWeb
             // Unsigned dev builds fail with -34018 unless this is off
             // (see TECH_SPEC / codebase-map): falls back to the legacy
             // Keychain instead of requiring Keychain Sharing entitlements.
