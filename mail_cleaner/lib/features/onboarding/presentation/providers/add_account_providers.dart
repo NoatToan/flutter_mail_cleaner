@@ -4,12 +4,15 @@ import 'dart:convert';
 import 'package:ai_smart_mail/core/config/google_oauth_config.dart';
 import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
-import 'package:ai_smart_mail/core/mail/demo_mail_provider.dart' show DemoMailProvider;
+import 'package:ai_smart_mail/core/mail/demo_mail_provider.dart'
+    show DemoMailProvider;
 import 'package:ai_smart_mail/core/mail/google_oauth_flow.dart';
 import 'package:ai_smart_mail/core/mail/google_token_client.dart';
 import 'package:ai_smart_mail/core/mail/imap_mail_provider.dart';
 import 'package:ai_smart_mail/core/mail/mail_provider.dart';
 import 'package:ai_smart_mail/core/mail/oauth_tokens.dart';
+import 'package:ai_smart_mail/core/mail/web_oauth_client.dart';
+import 'package:ai_smart_mail/core/mail/web_oauth_flow.dart';
 import 'package:ai_smart_mail/core/storage/credentials_store.dart';
 import 'package:ai_smart_mail/features/onboarding/domain/login_error_hint.dart';
 import 'package:drift/drift.dart';
@@ -63,6 +66,7 @@ class AddAccountState {
     this.errorHintKey,
     this.lastAttempt = ConnectAttempt.none,
     this.createdAccountIds = const [],
+    this.reconnected = false,
   });
 
   final AddAccountOption? selected;
@@ -77,6 +81,10 @@ class AddAccountState {
   final ConnectAttempt lastAttempt;
   final List<String> createdAccountIds;
 
+  /// The web callback renewed an existing account's tokens instead of
+  /// adding one (Settings › "Đăng nhập lại").
+  final bool reconnected;
+
   AddAccountState copyWith({
     AddAccountOption? selected,
     bool? isConnecting,
@@ -86,6 +94,7 @@ class AddAccountState {
     ConnectAttempt? lastAttempt,
     bool clearError = false,
     List<String>? createdAccountIds,
+    bool? reconnected,
   }) => AddAccountState(
     selected: selected ?? this.selected,
     isConnecting: isConnecting ?? this.isConnecting,
@@ -95,6 +104,7 @@ class AddAccountState {
     errorHintKey: clearError ? null : (errorHintKey ?? this.errorHintKey),
     lastAttempt: lastAttempt ?? this.lastAttempt,
     createdAccountIds: createdAccountIds ?? this.createdAccountIds,
+    reconnected: reconnected ?? this.reconnected,
   );
 }
 
@@ -181,10 +191,7 @@ class AddAccountController extends _$AddAccountController {
           ),
         );
     await ref.read(credentialsStoreProvider).savePassword(accountId, password);
-    state = state.copyWith(
-      isConnecting: false,
-      createdAccountIds: [accountId],
-    );
+    state = state.copyWith(isConnecting: false, createdAccountIds: [accountId]);
   }
 
   /// Outlook personal accounts require OAuth2 (TECH_SPEC §3). [email] is
@@ -230,7 +237,10 @@ class AddAccountController extends _$AddAccountController {
         state = state.copyWith(
           isConnecting: false,
           errorMessage: e.message,
-          errorHintKey: loginErrorHintKey(e.message, host: 'outlook.office365.com'),
+          errorHintKey: loginErrorHintKey(
+            e.message,
+            host: 'outlook.office365.com',
+          ),
         );
         return;
       }
@@ -286,7 +296,10 @@ class AddAccountController extends _$AddAccountController {
       _activeGoogleFlow = null;
       state = e.cancelled
           ? state.copyWith(isWaitingGoogleBrowser: false, clearError: true)
-          : state.copyWith(isWaitingGoogleBrowser: false, errorMessage: e.message);
+          : state.copyWith(
+              isWaitingGoogleBrowser: false,
+              errorMessage: e.message,
+            );
       return;
     }
     _activeGoogleFlow = null;
@@ -329,6 +342,97 @@ class AddAccountController extends _$AddAccountController {
         .read(credentialsStoreProvider)
         .saveOAuthTokens(accountId, jsonEncode(result.tokens.toJson()));
     state = state.copyWith(isConnecting: false, createdAccountIds: [accountId]);
+  }
+
+  /// Web: "Đăng nhập với Google/Microsoft" — leaves the app for the
+  /// provider's consent page (full-page redirect). The page navigates away
+  /// on success, so the spinner simply stays up until it does.
+  Future<void> connectWithWebOAuth(WebOAuthProvider provider) async {
+    state = state.copyWith(
+      isConnecting: true,
+      clearError: true,
+      lastAttempt: provider == WebOAuthProvider.google
+          ? ConnectAttempt.google
+          : ConnectAttempt.outlook,
+    );
+    try {
+      final config = await ref.read(webOAuthConfigProvider.future);
+      await ref.read(webOAuthFlowProvider).start(provider, config);
+    } on WebOAuthException catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(isConnecting: false, errorMessage: e.toString());
+    }
+  }
+
+  /// `/onboarding/oauth-callback`: finishes a web sign-in started by
+  /// [connectWithWebOAuth] or by Settings' "Đăng nhập lại". Signing in again
+  /// with an already-connected mailbox renews its tokens instead of adding a
+  /// duplicate account.
+  Future<void> completeWebOAuth(Uri callback) async {
+    state = state.copyWith(isConnecting: true, clearError: true);
+    final WebOAuthResult result;
+    try {
+      result = await ref.read(webOAuthFlowProvider).complete(callback);
+    } on WebOAuthException catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isConnecting: false,
+        errorMessage: e.error == 'access_denied'
+            ? 'Bạn đã huỷ đăng nhập.'
+            : e.toString(),
+      );
+      return;
+    } on MailFailure catch (e) {
+      if (!ref.mounted) return;
+      state = state.copyWith(isConnecting: false, errorMessage: e.message);
+      return;
+    }
+
+    final db = ref.read(appDatabaseProvider);
+    final type = result.provider.mailProvider;
+    final reauthId = result.reauthAccountId;
+    final existing =
+        await (db.select(db.accounts)..where(
+              (a) => reauthId != null
+                  ? a.id.equals(reauthId)
+                  : a.provider.equalsValue(type) &
+                        a.authKind.equalsValue(AuthKind.oauthApi) &
+                        a.email.equals(result.email),
+            ))
+            .getSingleOrNull();
+    final accountId = existing?.id ?? _uuid.v4();
+    // Tokens first: inserting the account flips `hasAccounts`, and sync may
+    // start before this method returns.
+    await ref
+        .read(credentialsStoreProvider)
+        .saveOAuthTokens(accountId, jsonEncode(result.tokens.toJson()));
+    if (existing == null) {
+      await db
+          .into(db.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              id: accountId,
+              provider: type,
+              authKind: AuthKind.oauthApi,
+              email: result.email,
+            ),
+          );
+    } else {
+      await (db.update(
+        db.accounts,
+      )..where((a) => a.id.equals(accountId))).write(
+        const AccountsCompanion(
+          syncState: Value(SyncState.idle),
+          lastError: Value(null),
+        ),
+      );
+    }
+    if (!ref.mounted) return;
+    state = state.copyWith(
+      isConnecting: false,
+      createdAccountIds: [accountId],
+      reconnected: existing != null,
+    );
   }
 
   /// "Huỷ" while waiting on the Google consent browser tab.

@@ -4,7 +4,11 @@ library;
 
 enum MailProviderType { gmail, outlook, icloud, imap, demo }
 
-enum AuthKind { password, oauth, none }
+/// `oauth` = OAuth2 tokens used over IMAP XOAUTH2 (desktop/mobile).
+/// `oauthApi` = OAuth2 tokens used against the provider's REST API (Gmail
+/// API / Microsoft Graph) — the web build's transport, since browsers can't
+/// open IMAP sockets.
+enum AuthKind { password, oauth, none, oauthApi }
 
 enum FolderRole { inbox, sent, archive, trash, spam, drafts, all, other }
 

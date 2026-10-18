@@ -5,6 +5,10 @@ abstract final class AppRoutes {
   static const addAccount = '/onboarding/add-account';
   static const scanning = '/onboarding/scanning';
 
+  /// Web OAuth redirect target — must match `WebOAuthClient.callbackPath`
+  /// and the redirect URIs registered with Google/Microsoft.
+  static const oauthCallback = '/onboarding/oauth-callback';
+
   static const dashboard = '/dashboard';
   static const inbox = '/inbox';
   static const mailboxes = '/mailboxes';
@@ -29,7 +33,8 @@ abstract final class AppRoutes {
 
   static String message(int id) => '$inbox/message/$id';
 
-  static String senderDetail(String email) => '$senders/${Uri.encodeComponent(email)}';
+  static String senderDetail(String email) =>
+      '$senders/${Uri.encodeComponent(email)}';
 
   static String catchUpFor(String senderEmail) =>
       Uri(path: catchUp, queryParameters: {'sender': senderEmail}).toString();

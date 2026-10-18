@@ -6657,6 +6657,329 @@ class AiTransparencyLogCompanion extends UpdateCompanion<TransparencyLogRow> {
   }
 }
 
+class $RemoteMessageIdsTable extends RemoteMessageIds
+    with TableInfo<$RemoteMessageIdsTable, RemoteMessageIdRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteMessageIdsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _folderPathMeta = const VerificationMeta(
+    'folderPath',
+  );
+  @override
+  late final GeneratedColumn<String> folderPath = GeneratedColumn<String>(
+    'folder_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _uidMeta = const VerificationMeta('uid');
+  @override
+  late final GeneratedColumn<int> uid = GeneratedColumn<int>(
+    'uid',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [accountId, folderPath, uid, remoteId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_message_ids';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RemoteMessageIdRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('folder_path')) {
+      context.handle(
+        _folderPathMeta,
+        folderPath.isAcceptableOrUnknown(data['folder_path']!, _folderPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_folderPathMeta);
+    }
+    if (data.containsKey('uid')) {
+      context.handle(
+        _uidMeta,
+        uid.isAcceptableOrUnknown(data['uid']!, _uidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uidMeta);
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_remoteIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {accountId, folderPath, uid};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {accountId, folderPath, remoteId},
+  ];
+  @override
+  RemoteMessageIdRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteMessageIdRow(
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      )!,
+      folderPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_path'],
+      )!,
+      uid: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}uid'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      )!,
+    );
+  }
+
+  @override
+  $RemoteMessageIdsTable createAlias(String alias) {
+    return $RemoteMessageIdsTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteMessageIdRow extends DataClass
+    implements Insertable<RemoteMessageIdRow> {
+  final String accountId;
+  final String folderPath;
+  final int uid;
+  final String remoteId;
+  const RemoteMessageIdRow({
+    required this.accountId,
+    required this.folderPath,
+    required this.uid,
+    required this.remoteId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['account_id'] = Variable<String>(accountId);
+    map['folder_path'] = Variable<String>(folderPath);
+    map['uid'] = Variable<int>(uid);
+    map['remote_id'] = Variable<String>(remoteId);
+    return map;
+  }
+
+  RemoteMessageIdsCompanion toCompanion(bool nullToAbsent) {
+    return RemoteMessageIdsCompanion(
+      accountId: Value(accountId),
+      folderPath: Value(folderPath),
+      uid: Value(uid),
+      remoteId: Value(remoteId),
+    );
+  }
+
+  factory RemoteMessageIdRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteMessageIdRow(
+      accountId: serializer.fromJson<String>(json['accountId']),
+      folderPath: serializer.fromJson<String>(json['folderPath']),
+      uid: serializer.fromJson<int>(json['uid']),
+      remoteId: serializer.fromJson<String>(json['remoteId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'accountId': serializer.toJson<String>(accountId),
+      'folderPath': serializer.toJson<String>(folderPath),
+      'uid': serializer.toJson<int>(uid),
+      'remoteId': serializer.toJson<String>(remoteId),
+    };
+  }
+
+  RemoteMessageIdRow copyWith({
+    String? accountId,
+    String? folderPath,
+    int? uid,
+    String? remoteId,
+  }) => RemoteMessageIdRow(
+    accountId: accountId ?? this.accountId,
+    folderPath: folderPath ?? this.folderPath,
+    uid: uid ?? this.uid,
+    remoteId: remoteId ?? this.remoteId,
+  );
+  RemoteMessageIdRow copyWithCompanion(RemoteMessageIdsCompanion data) {
+    return RemoteMessageIdRow(
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      folderPath: data.folderPath.present
+          ? data.folderPath.value
+          : this.folderPath,
+      uid: data.uid.present ? data.uid.value : this.uid,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteMessageIdRow(')
+          ..write('accountId: $accountId, ')
+          ..write('folderPath: $folderPath, ')
+          ..write('uid: $uid, ')
+          ..write('remoteId: $remoteId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(accountId, folderPath, uid, remoteId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteMessageIdRow &&
+          other.accountId == this.accountId &&
+          other.folderPath == this.folderPath &&
+          other.uid == this.uid &&
+          other.remoteId == this.remoteId);
+}
+
+class RemoteMessageIdsCompanion extends UpdateCompanion<RemoteMessageIdRow> {
+  final Value<String> accountId;
+  final Value<String> folderPath;
+  final Value<int> uid;
+  final Value<String> remoteId;
+  final Value<int> rowid;
+  const RemoteMessageIdsCompanion({
+    this.accountId = const Value.absent(),
+    this.folderPath = const Value.absent(),
+    this.uid = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteMessageIdsCompanion.insert({
+    required String accountId,
+    required String folderPath,
+    required int uid,
+    required String remoteId,
+    this.rowid = const Value.absent(),
+  }) : accountId = Value(accountId),
+       folderPath = Value(folderPath),
+       uid = Value(uid),
+       remoteId = Value(remoteId);
+  static Insertable<RemoteMessageIdRow> custom({
+    Expression<String>? accountId,
+    Expression<String>? folderPath,
+    Expression<int>? uid,
+    Expression<String>? remoteId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (accountId != null) 'account_id': accountId,
+      if (folderPath != null) 'folder_path': folderPath,
+      if (uid != null) 'uid': uid,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteMessageIdsCompanion copyWith({
+    Value<String>? accountId,
+    Value<String>? folderPath,
+    Value<int>? uid,
+    Value<String>? remoteId,
+    Value<int>? rowid,
+  }) {
+    return RemoteMessageIdsCompanion(
+      accountId: accountId ?? this.accountId,
+      folderPath: folderPath ?? this.folderPath,
+      uid: uid ?? this.uid,
+      remoteId: remoteId ?? this.remoteId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (folderPath.present) {
+      map['folder_path'] = Variable<String>(folderPath.value);
+    }
+    if (uid.present) {
+      map['uid'] = Variable<int>(uid.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteMessageIdsCompanion(')
+          ..write('accountId: $accountId, ')
+          ..write('folderPath: $folderPath, ')
+          ..write('uid: $uid, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6672,6 +6995,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SummariesCacheTable summariesCache = $SummariesCacheTable(this);
   late final $AiTransparencyLogTable aiTransparencyLog =
       $AiTransparencyLogTable(this);
+  late final $RemoteMessageIdsTable remoteMessageIds = $RemoteMessageIdsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6688,6 +7014,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     labelsTraining,
     summariesCache,
     aiTransparencyLog,
+    remoteMessageIds,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -6732,6 +7059,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('labels_training', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'accounts',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('remote_message_ids', kind: UpdateKind.delete)],
     ),
   ]);
   @override
@@ -6816,6 +7150,26 @@ final class $$AccountsTableReferences
     ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_messagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RemoteMessageIdsTable, List<RemoteMessageIdRow>>
+  _remoteMessageIdsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.remoteMessageIds,
+    aliasName: 'accounts__id__remote_message_ids__account_id',
+  );
+
+  $$RemoteMessageIdsTableProcessedTableManager get remoteMessageIdsRefs {
+    final manager = $$RemoteMessageIdsTableTableManager(
+      $_db,
+      $_db.remoteMessageIds,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _remoteMessageIdsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6960,6 +7314,31 @@ class $$AccountsTableFilterComposer
           }) => $$MessagesTableFilterComposer(
             $db: $db,
             $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> remoteMessageIdsRefs(
+    Expression<bool> Function($$RemoteMessageIdsTableFilterComposer f) f,
+  ) {
+    final $$RemoteMessageIdsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.remoteMessageIds,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemoteMessageIdsTableFilterComposer(
+            $db: $db,
+            $table: $db.remoteMessageIds,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7184,6 +7563,31 @@ class $$AccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> remoteMessageIdsRefs<T extends Object>(
+    Expression<T> Function($$RemoteMessageIdsTableAnnotationComposer a) f,
+  ) {
+    final $$RemoteMessageIdsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.remoteMessageIds,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemoteMessageIdsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.remoteMessageIds,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -7199,7 +7603,11 @@ class $$AccountsTableTableManager
           $$AccountsTableUpdateCompanionBuilder,
           (AccountRow, $$AccountsTableReferences),
           AccountRow,
-          PrefetchHooks Function({bool foldersRefs, bool messagesRefs})
+          PrefetchHooks Function({
+            bool foldersRefs,
+            bool messagesRefs,
+            bool remoteMessageIdsRefs,
+          })
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
     : super(
@@ -7300,50 +7708,89 @@ class $$AccountsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({foldersRefs = false, messagesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (foldersRefs) db.folders,
-                if (messagesRefs) db.messages,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (foldersRefs)
-                    await $_getPrefetchedData<
-                      AccountRow,
-                      $AccountsTable,
-                      FolderRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._foldersRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$AccountsTableReferences(db, table, p0).foldersRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.accountId == item.id),
-                      typedResults: items,
-                    ),
-                  if (messagesRefs)
-                    await $_getPrefetchedData<
-                      AccountRow,
-                      $AccountsTable,
-                      MessageRow
-                    >(
-                      currentTable: table,
-                      referencedTable: $$AccountsTableReferences
-                          ._messagesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$AccountsTableReferences(db, table, p0).messagesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.accountId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                foldersRefs = false,
+                messagesRefs = false,
+                remoteMessageIdsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (foldersRefs) db.folders,
+                    if (messagesRefs) db.messages,
+                    if (remoteMessageIdsRefs) db.remoteMessageIds,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (foldersRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $AccountsTable,
+                          FolderRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._foldersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).foldersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (messagesRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $AccountsTable,
+                          MessageRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._messagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (remoteMessageIdsRefs)
+                        await $_getPrefetchedData<
+                          AccountRow,
+                          $AccountsTable,
+                          RemoteMessageIdRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._remoteMessageIdsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).remoteMessageIdsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -7360,7 +7807,11 @@ typedef $$AccountsTableProcessedTableManager =
       $$AccountsTableUpdateCompanionBuilder,
       (AccountRow, $$AccountsTableReferences),
       AccountRow,
-      PrefetchHooks Function({bool foldersRefs, bool messagesRefs})
+      PrefetchHooks Function({
+        bool foldersRefs,
+        bool messagesRefs,
+        bool remoteMessageIdsRefs,
+      })
     >;
 typedef $$FoldersTableCreateCompanionBuilder = FoldersCompanion Function({
   Value<int> id,
@@ -11199,6 +11650,317 @@ typedef $$AiTransparencyLogTableProcessedTableManager =
       TransparencyLogRow,
       PrefetchHooks Function()
     >;
+typedef $$RemoteMessageIdsTableCreateCompanionBuilder =
+    RemoteMessageIdsCompanion Function({
+      required String accountId,
+      required String folderPath,
+      required int uid,
+      required String remoteId,
+      Value<int> rowid,
+    });
+typedef $$RemoteMessageIdsTableUpdateCompanionBuilder =
+    RemoteMessageIdsCompanion Function({
+      Value<String> accountId,
+      Value<String> folderPath,
+      Value<int> uid,
+      Value<String> remoteId,
+      Value<int> rowid,
+    });
+
+final class $$RemoteMessageIdsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RemoteMessageIdsTable,
+          RemoteMessageIdRow
+        > {
+  $$RemoteMessageIdsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('remote_message_ids__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager get accountId {
+    final $_column = $_itemColumn<String>('account_id')!;
+
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RemoteMessageIdsTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteMessageIdsTable> {
+  $$RemoteMessageIdsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get folderPath => $composableBuilder(
+    column: $table.folderPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get uid => $composableBuilder(
+    column: $table.uid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteMessageIdsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteMessageIdsTable> {
+  $$RemoteMessageIdsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get folderPath => $composableBuilder(
+    column: $table.folderPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get uid => $composableBuilder(
+    column: $table.uid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteMessageIdsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteMessageIdsTable> {
+  $$RemoteMessageIdsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get folderPath => $composableBuilder(
+    column: $table.folderPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get uid =>
+      $composableBuilder(column: $table.uid, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteMessageIdsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RemoteMessageIdsTable,
+          RemoteMessageIdRow,
+          $$RemoteMessageIdsTableFilterComposer,
+          $$RemoteMessageIdsTableOrderingComposer,
+          $$RemoteMessageIdsTableAnnotationComposer,
+          $$RemoteMessageIdsTableCreateCompanionBuilder,
+          $$RemoteMessageIdsTableUpdateCompanionBuilder,
+          (RemoteMessageIdRow, $$RemoteMessageIdsTableReferences),
+          RemoteMessageIdRow,
+          PrefetchHooks Function({bool accountId})
+        > {
+  $$RemoteMessageIdsTableTableManager(
+    _$AppDatabase db,
+    $RemoteMessageIdsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteMessageIdsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteMessageIdsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteMessageIdsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> accountId = const Value.absent(),
+                Value<String> folderPath = const Value.absent(),
+                Value<int> uid = const Value.absent(),
+                Value<String> remoteId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RemoteMessageIdsCompanion(
+                accountId: accountId,
+                folderPath: folderPath,
+                uid: uid,
+                remoteId: remoteId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String accountId,
+                required String folderPath,
+                required int uid,
+                required String remoteId,
+                Value<int> rowid = const Value.absent(),
+              }) => RemoteMessageIdsCompanion.insert(
+                accountId: accountId,
+                folderPath: folderPath,
+                uid: uid,
+                remoteId: remoteId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RemoteMessageIdsTable, RemoteMessageIdRow>(
+                    table,
+                  ),
+                  $$RemoteMessageIdsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.accountId,
+                        referencedTable: $$RemoteMessageIdsTableReferences
+                            ._accountIdTable(db),
+                        referencedColumn: $$RemoteMessageIdsTableReferences
+                            ._accountIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RemoteMessageIdsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RemoteMessageIdsTable,
+      RemoteMessageIdRow,
+      $$RemoteMessageIdsTableFilterComposer,
+      $$RemoteMessageIdsTableOrderingComposer,
+      $$RemoteMessageIdsTableAnnotationComposer,
+      $$RemoteMessageIdsTableCreateCompanionBuilder,
+      $$RemoteMessageIdsTableUpdateCompanionBuilder,
+      (RemoteMessageIdRow, $$RemoteMessageIdsTableReferences),
+      RemoteMessageIdRow,
+      PrefetchHooks Function({bool accountId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11224,6 +11986,8 @@ class $AppDatabaseManager {
       $$SummariesCacheTableTableManager(_db, _db.summariesCache);
   $$AiTransparencyLogTableTableManager get aiTransparencyLog =>
       $$AiTransparencyLogTableTableManager(_db, _db.aiTransparencyLog);
+  $$RemoteMessageIdsTableTableManager get remoteMessageIds =>
+      $$RemoteMessageIdsTableTableManager(_db, _db.remoteMessageIds);
 }
 
 // **************************************************************************

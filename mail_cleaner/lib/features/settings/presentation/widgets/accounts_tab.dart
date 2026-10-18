@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:ai_smart_mail/app/routes.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
 import 'package:ai_smart_mail/core/mail/gmail_reauth_controller.dart';
+import 'package:ai_smart_mail/core/mail/web_oauth_client.dart';
+import 'package:ai_smart_mail/core/mail/web_oauth_flow.dart';
 import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/core/widgets/account_badge.dart';
 import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
@@ -61,7 +63,8 @@ class AccountsTab extends ConsumerWidget {
               child: Column(
                 children: [
                   for (var i = 0; i < rows.length; i++) ...[
-                    if (i > 0) Divider(height: 1, color: tokens.divider, indent: 50),
+                    if (i > 0)
+                      Divider(height: 1, color: tokens.divider, indent: 50),
                     _AccountTile(
                       account: rows[i],
                       onRemove: () => _confirmRemove(context, ref, rows[i]),
@@ -91,10 +94,34 @@ class _AccountTile extends ConsumerWidget {
   final SettingsAccount account;
   final VoidCallback onRemove;
 
-  /// Only Gmail OAuth tokens auto-refresh/reauth today (see
-  /// `GoogleTokenRefresher`) — Outlook/iCloud errors still need the user to
-  /// remove and re-add the account.
-  bool get _canReauth => account.provider == MailProviderType.gmail;
+  /// Gmail OAuth (desktop, `GoogleTokenRefresher`) and every web REST
+  /// account (`WebOAuthTokenRefresher`) can re-authorise in place; other
+  /// errors still need the user to remove and re-add the account.
+  bool get _canReauth =>
+      _isWebAccount || account.provider == MailProviderType.gmail;
+
+  bool get _isWebAccount => account.authKind == AuthKind.oauthApi;
+
+  /// Web accounts re-run the browser sign-in; it comes back through
+  /// `/onboarding/oauth-callback`, which only replaces this account's tokens.
+  Future<void> _reauthorizeOnWeb(BuildContext context, WidgetRef ref) async {
+    final provider = WebOAuthProvider.of(account.provider);
+    if (provider == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final config = await ref.read(webOAuthConfigProvider.future);
+      await ref
+          .read(webOAuthFlowProvider)
+          .start(
+            provider,
+            config,
+            reauthAccountId: account.id,
+            loginHint: account.email,
+          );
+    } on WebOAuthException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,9 +129,10 @@ class _AccountTile extends ConsumerWidget {
     final reauth = ref.watch(gmailReauthControllerProvider);
     final isReauthingThis = reauth.accountId == account.id && reauth.isRunning;
     final statusText = switch (account.syncState) {
-      SyncState.idle => account.lastSyncAt == null
-          ? 'settings.sync_never'.tr()
-          : 'settings.sync_idle'.tr(),
+      SyncState.idle =>
+        account.lastSyncAt == null
+            ? 'settings.sync_never'.tr()
+            : 'settings.sync_idle'.tr(),
       SyncState.syncing => 'settings.sync_in_progress'.tr(),
       SyncState.error => account.lastError ?? 'settings.sync_error'.tr(),
     };
@@ -140,18 +168,22 @@ class _AccountTile extends ConsumerWidget {
                 IconButton(
                   tooltip: 'common.cancel'.tr(),
                   icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => ref
-                      .read(gmailReauthControllerProvider.notifier)
-                      .cancel(),
+                  onPressed: () =>
+                      ref.read(gmailReauthControllerProvider.notifier).cancel(),
                 ),
               ],
             )
           else if (_canReauth && account.syncState == SyncState.error)
             TextButton(
               onPressed: () => unawaited(
-                ref
-                    .read(gmailReauthControllerProvider.notifier)
-                    .reauthorize(accountId: account.id, email: account.email),
+                _isWebAccount
+                    ? _reauthorizeOnWeb(context, ref)
+                    : ref
+                          .read(gmailReauthControllerProvider.notifier)
+                          .reauthorize(
+                            accountId: account.id,
+                            email: account.email,
+                          ),
               ),
               child: Text('settings.reauth_cta'.tr()),
             ),

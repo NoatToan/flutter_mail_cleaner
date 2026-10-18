@@ -36,6 +36,17 @@ class CredentialsStore {
   Future<String?> readOAuthTokens(String accountId) =>
       _storage.read(key: _oauthKey(accountId));
 
+  static const _pendingOAuthKey = 'oauth.pending';
+
+  /// Web OAuth in flight (PKCE verifier + state), JSON-encoded by the caller.
+  /// Survives the full-page redirect to the provider and back.
+  Future<void> savePendingOAuth(String json) =>
+      _storage.write(key: _pendingOAuthKey, value: json);
+
+  Future<String?> readPendingOAuth() => _storage.read(key: _pendingOAuthKey);
+
+  Future<void> deletePendingOAuth() => _storage.delete(key: _pendingOAuthKey);
+
   Future<void> deleteAccount(String accountId) async {
     await _storage.delete(key: _passwordKey(accountId));
     await _storage.delete(key: _oauthKey(accountId));

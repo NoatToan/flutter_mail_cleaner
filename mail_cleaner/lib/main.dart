@@ -6,6 +6,7 @@ import 'package:ai_smart_mail/features/onboarding/presentation/providers/add_acc
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Developer launch option: `--dart-define=DEMO_SEED=true` creates the demo
@@ -14,6 +15,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _demoSeed = bool.fromEnvironment('DEMO_SEED');
 
 Future<void> main() async {
+  // Web: real paths instead of `#/…`, so Google/Microsoft can redirect to
+  // `/onboarding/oauth-callback` (no-op on other platforms).
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
@@ -24,7 +28,9 @@ Future<void> main() async {
   if (_demoSeed) {
     final db = container.read(appDatabaseProvider);
     if ((await db.select(db.accounts).get()).isEmpty) {
-      await container.read(addAccountControllerProvider.notifier).createDemoAccounts();
+      await container
+          .read(addAccountControllerProvider.notifier)
+          .createDemoAccounts();
     }
   }
 
