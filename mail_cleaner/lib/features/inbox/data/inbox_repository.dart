@@ -2,11 +2,14 @@ import 'package:ai_smart_mail/core/database/app_database.dart';
 import 'package:ai_smart_mail/core/domain/enums.dart';
 import 'package:ai_smart_mail/core/utils/throttle_latest.dart';
 import 'package:ai_smart_mail/features/inbox/domain/inbox_sort.dart';
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 /// One row of the mail list (list pane / search results). A read model, not
 /// a DB row — joins the sender's provider/account and the one tag shown as
 /// a pill (design: list rows show at most one tag chip).
+@immutable
 class MessageListItem {
   const MessageListItem({
     required this.id,
@@ -55,6 +58,44 @@ class MessageListItem {
     tagKey: tag?.key,
     tagName: tag?.name,
     tagColorKey: tag?.colorKey,
+  );
+
+  // Value equality lets the live list skip emissions where nothing visible
+  // changed (sync re-writes unchanged rows on every incremental pass).
+  @override
+  bool operator ==(Object other) =>
+      other is MessageListItem &&
+      other.id == id &&
+      other.accountId == accountId &&
+      other.provider == provider &&
+      other.fromEmail == fromEmail &&
+      other.fromName == fromName &&
+      other.subject == subject &&
+      other.snippet == snippet &&
+      other.date == date &&
+      other.isSeen == isSeen &&
+      other.category == category &&
+      other.size == size &&
+      other.tagKey == tagKey &&
+      other.tagName == tagName &&
+      other.tagColorKey == tagColorKey;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    accountId,
+    provider,
+    fromEmail,
+    fromName,
+    subject,
+    snippet,
+    date,
+    isSeen,
+    category,
+    size,
+    tagKey,
+    tagName,
+    tagColorKey,
   );
 }
 
@@ -251,7 +292,7 @@ class InboxRepository {
           _toItem(r.readTable(_db.messages), r.readTable(_db.accounts)),
       ];
       return _attachPrimaryTags(items);
-    });
+    }).distinct(const ListEquality<MessageListItem>().equals);
   }
 
   Future<List<MessageListItem>> _searchOnce({

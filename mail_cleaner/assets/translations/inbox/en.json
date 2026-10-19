@@ -80,6 +80,7 @@
     "compose_quote_header": "{} wrote:",
     "more_actions": "More actions",
     "swipe_read": "Read",
-    "swipe_unread": "Unread"
+    "swipe_unread": "Unread",
+    "new_mail_pill": "{} new"
   }
 }
