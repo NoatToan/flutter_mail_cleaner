@@ -9,6 +9,7 @@ import 'package:ai_smart_mail/core/theme/app_theme.dart';
 import 'package:ai_smart_mail/core/theme/app_tokens.dart';
 import 'package:ai_smart_mail/core/widgets/app_empty_state.dart';
 import 'package:ai_smart_mail/features/inbox/data/inbox_repository.dart';
+import 'package:ai_smart_mail/features/inbox/domain/held_arrivals.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/inbox_providers.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/providers/mail_selection_provider.dart';
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/compose_dialog.dart';
@@ -52,6 +53,15 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   String? _lastBatchId;
   final Set<int> _markedRead = {};
   List<MessageListItem>? _lastItems;
+
+  /// What the list rendered last build, and for which query — the baseline
+  /// [heldArrivals] compares each new emission against.
+  List<int> _shownIds = const [];
+  InboxQuery? _shownQuery;
+
+  /// Mail that arrived above the viewport while scrolled down, kept out of
+  /// the list so the rows on screen don't jump (see [heldArrivals]).
+  Set<int> _held = const {};
   Timer? _searchDebounce;
 
   @override
@@ -95,7 +105,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     sort: ref.read(inboxSortSettingProvider),
   );
 
+  bool get _nearTop =>
+      !_scrollController.hasClients || _scrollController.offset <= 8;
+
+  /// Back at the top: let the held arrivals in (rebuild recomputes them).
+  void _releaseHeldIfAtTop() {
+    if (_held.isNotEmpty && _nearTop) setState(() {});
+  }
+
+  void _showHeld() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
   void _onScroll() {
+    _releaseHeldIfAtTop();
     final position = _scrollController.position;
     if (position.pixels < position.maxScrollExtent - 600) return;
     // Only ask for the next page once the current one came back full —
@@ -123,6 +151,30 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       clearMailSelection(ref);
       setState(() => _search = value);
     });
+  }
+
+  /// Drops [heldArrivals] from [all] (only while scrolled down within the
+  /// same query) and remembers what is shown for the next emission.
+  List<MessageListItem> _withoutHeld(
+    InboxQuery query,
+    List<MessageListItem> all,
+  ) {
+    final allIds = [for (final m in all) m.id];
+    final sameQuery = query == _shownQuery;
+    _held = sameQuery && !_nearTop
+        ? heldArrivals(shownIds: _shownIds, nextIds: allIds)
+        : const {};
+    _shownQuery = query;
+    if (_held.isEmpty) {
+      _shownIds = allIds;
+      return all;
+    }
+    final shown = [
+      for (final m in all)
+        if (!_held.contains(m.id)) m,
+    ];
+    _shownIds = [for (final m in shown) m.id];
+    return shown;
   }
 
   List<String>? get _accountIds =>
@@ -177,14 +229,26 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   Widget build(BuildContext context) {
     final size = WindowSize.of(context);
     ref.watch(inboxSortSettingProvider);
-    var itemsAsync = ref.watch(inboxMessagesProvider(_query));
-    // Switching tab/filter/sort starts a new query: keep showing the previous
-    // rows until the new ones arrive instead of flashing a spinner.
+    final query = _query;
+    final pageSize = ref.watch(inboxPageSizeProvider(query));
+    var itemsAsync = ref.watch(inboxMessagesProvider(query));
+    // Loading more re-runs the query (reload) — the next page appears in the
+    // footer, the rows already on screen stay put.
+    final loadingMore = itemsAsync.isLoading && itemsAsync.hasValue;
+    // Switching tab/filter/sort starts a new query, and loading the next
+    // page reloads this one: keep showing the current rows until the new
+    // ones arrive instead of flashing a spinner over the whole list.
     if (itemsAsync.hasValue) {
       _lastItems = itemsAsync.value;
+      if (loadingMore) itemsAsync = AsyncData(itemsAsync.value!);
     } else if (itemsAsync.isLoading && _lastItems != null) {
       itemsAsync = AsyncData(_lastItems!);
     }
+    // A full page came back, so there may be more below: show the footer
+    // that the infinite scroll fills in.
+    final hasMore = (itemsAsync.value?.length ?? 0) >= pageSize;
+    itemsAsync = itemsAsync.whenData((all) => _withoutHeld(query, all));
+    final paging = (hasMore: hasMore, loadingMore: loadingMore);
     final items = itemsAsync.value ?? const <MessageListItem>[];
 
     final body = CallbackShortcuts(
@@ -221,8 +285,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       child: Focus(
         autofocus: true,
         child: size.showsReadingPane
-            ? _buildExpanded(context, itemsAsync, items)
-            : _buildCompact(context, itemsAsync, items),
+            ? _buildExpanded(context, itemsAsync, items, paging)
+            : _buildCompact(context, itemsAsync, items, paging),
       ),
     );
 
@@ -233,6 +297,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     BuildContext context,
     AsyncValue<List<MessageListItem>> itemsAsync,
     List<MessageListItem> items,
+    _Paging paging,
   ) {
     final tokens = AppTokens.of(context);
     return Row(
@@ -247,6 +312,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             itemsAsync: itemsAsync,
             searchController: _searchController,
             scrollController: _scrollController,
+            hasMore: paging.hasMore,
+            loadingMore: paging.loadingMore,
+            heldCount: _held.length,
+            onShowHeld: _showHeld,
             onSearchChanged: _setSearch,
             onSelect: (id) => context.go(_locationFor(messageId: id)),
           ),
@@ -290,6 +359,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     BuildContext context,
     AsyncValue<List<MessageListItem>> itemsAsync,
     List<MessageListItem> items,
+    _Paging paging,
   ) {
     if (widget.selectedMessageId != null) {
       return Column(
@@ -319,12 +389,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         itemsAsync: itemsAsync,
         searchController: _searchController,
         scrollController: _scrollController,
+        hasMore: paging.hasMore,
+        loadingMore: paging.loadingMore,
+        heldCount: _held.length,
+        onShowHeld: _showHeld,
         onSearchChanged: _setSearch,
         onSelect: (id) => context.go(_locationFor(messageId: id)),
       ),
     );
   }
 }
+
+typedef _Paging = ({bool hasMore, bool loadingMore});
 
 /// The right-hand pane in the expanded/large layout. Watches only
 /// `mailSelectionProvider.select((s) => s.length)` so a row toggling its own
@@ -476,6 +552,10 @@ class _ListPane extends ConsumerWidget {
     required this.itemsAsync,
     required this.searchController,
     required this.scrollController,
+    required this.hasMore,
+    required this.loadingMore,
+    required this.heldCount,
+    required this.onShowHeld,
     required this.onSearchChanged,
     required this.onSelect,
   });
@@ -487,6 +567,16 @@ class _ListPane extends ConsumerWidget {
   final AsyncValue<List<MessageListItem>> itemsAsync;
   final TextEditingController searchController;
   final ScrollController scrollController;
+
+  /// The last page came back full — more rows may load on scroll.
+  final bool hasMore;
+
+  /// The next page is being fetched (query reloading with the old rows).
+  final bool loadingMore;
+
+  /// New mail held above the viewport; > 0 shows the "N new" pill.
+  final int heldCount;
+  final VoidCallback onShowHeld;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<int> onSelect;
 
@@ -498,27 +588,32 @@ class _ListPane extends ConsumerWidget {
     // to populate its mostly-hidden "Gắn tag" context-menu entry.
     final tags = ref.watch(allTagsProvider).value ?? const <TagOption>[];
     final surface = Theme.of(context).colorScheme.surface;
+    final searchHeader = ColoredBox(
+      color: surface,
+      child: InboxSearchHeader(
+        accountId: accountIds?.first,
+        filter: filter,
+        tagKey: tagKey,
+        searchController: searchController,
+        onSearchChanged: onSearchChanged,
+      ),
+    );
 
-    return ColoredBox(
+    final list = ColoredBox(
       color: surface,
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
-          // Search + category tabs collapse while scrolling down the list
-          // and slide back on any scroll up, so a phone shows more mail.
-          SliverFloatingHeader(
-            snapMode: FloatingHeaderSnapMode.scroll,
-            child: ColoredBox(
-              color: surface,
-              child: InboxSearchHeader(
-                accountId: accountIds?.first,
-                filter: filter,
-                tagKey: tagKey,
-                searchController: searchController,
-                onSearchChanged: onSearchChanged,
-              ),
-            ),
-          ),
+          // Phone only: search + category tabs collapse while scrolling down
+          // and slide back on any scroll up, to show more mail on a small
+          // screen. Wider windows have the room, so the header stays put.
+          if (WindowSize.of(context).isCompact)
+            SliverFloatingHeader(
+              snapMode: FloatingHeaderSnapMode.scroll,
+              child: searchHeader,
+            )
+          else
+            PinnedHeaderSliver(child: searchHeader),
           // The toolbar stays: filters and bulk actions remain reachable.
           PinnedHeaderSliver(
             child: ColoredBox(
@@ -569,6 +664,8 @@ class _ListPane extends ConsumerWidget {
                     );
                   },
                 ),
+              if (items.isNotEmpty && (hasMore || loadingMore))
+                const SliverToBoxAdapter(child: _LoadMoreFooter()),
             ],
             loading: () => const [
               SliverFillRemaining(
@@ -586,7 +683,43 @@ class _ListPane extends ConsumerWidget {
         ],
       ),
     );
+
+    if (heldCount == 0) return list;
+    return Stack(
+      children: [
+        list,
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: AppSpace.lg,
+          child: Center(
+            child: FilledButton.tonalIcon(
+              onPressed: onShowHeld,
+              icon: const Icon(Icons.arrow_upward, size: 18),
+              label: Text('inbox.new_mail_pill'.tr(args: ['$heldCount'])),
+            ),
+          ),
+        ),
+      ],
+    );
   }
+}
+
+/// Bottom of the list while more pages may follow: a small spinner that the
+/// infinite scroll replaces with the next rows.
+class _LoadMoreFooter extends StatelessWidget {
+  const _LoadMoreFooter();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(vertical: AppSpace.lg),
+    child: Center(
+      child: SizedBox.square(
+        dimension: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ),
+  );
 }
 
 class _DetailToolbar extends ConsumerWidget {

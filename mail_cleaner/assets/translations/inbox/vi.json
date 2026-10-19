@@ -80,6 +80,7 @@
     "compose_quote_header": "{} đã viết:",
     "more_actions": "Thêm thao tác",
     "swipe_read": "Đã đọc",
-    "swipe_unread": "Chưa đọc"
+    "swipe_unread": "Chưa đọc",
+    "new_mail_pill": "{} thư mới"
   }
 }

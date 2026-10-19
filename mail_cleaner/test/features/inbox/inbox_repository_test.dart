@@ -160,4 +160,28 @@ void main() {
 
     expect(items, hasLength(2));
   });
+
+  test('does not re-emit when a sync rewrites unchanged rows', () async {
+    final id = await insertMessage(uid: 1, subject: 'hello');
+    final emissions = <List<MessageListItem>>[];
+    final sub = repo.watchMessages().listen(emissions.add);
+    addTearDown(sub.cancel);
+    // Past the 800ms UI throttle between each write.
+    const settle = Duration(milliseconds: 1000);
+    await Future<void>.delayed(settle);
+
+    // Same values written again (what an incremental sync pass does).
+    await (db.update(db.messages)..where((m) => m.id.equals(id))).write(
+      const MessagesCompanion(subject: Value('hello')),
+    );
+    await Future<void>.delayed(settle);
+    expect(emissions, hasLength(1));
+
+    await (db.update(db.messages)..where((m) => m.id.equals(id))).write(
+      const MessagesCompanion(subject: Value('changed')),
+    );
+    await Future<void>.delayed(settle);
+    expect(emissions, hasLength(2));
+    expect(emissions.last.single.subject, 'changed');
+  });
 }
