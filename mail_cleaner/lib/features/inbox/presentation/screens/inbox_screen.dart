@@ -20,6 +20,7 @@ import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_list_tile
 import 'package:ai_smart_mail/features/inbox/presentation/widgets/mail_swipe_actions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,6 +49,12 @@ class InboxScreen extends ConsumerStatefulWidget {
 class _InboxScreenState extends ConsumerState<InboxScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+
+  /// On the selected row only — lets [_revealSelected] find it.
+  final GlobalKey _selectedRowKey = GlobalKey();
+
+  /// Rows as rendered last build (after held arrivals are dropped).
+  List<MessageListItem> _items = const [];
   String _search = '';
   double _listWidth = AppPane.list;
   String? _lastBatchId;
@@ -79,6 +86,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedMessageId != oldWidget.selectedMessageId) {
       _maybeMarkRead(widget.selectedMessageId);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
     }
     // Selection is scoped to "the current list" — switching mailbox/account
     // or filter means the old selection no longer refers to visible rows.
@@ -133,6 +141,61 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final loaded = ref.read(inboxMessagesProvider(_query)).value?.length ?? 0;
     if (loaded < pageSize) return;
     ref.read(inboxPageSizeProvider(_query).notifier).loadMore();
+  }
+
+  /// Keeps the selected row inside the list viewport when the selection moves
+  /// (↑/↓ keys, toolbar arrows). Scrolls the minimum distance — a row already
+  /// fully visible stays put — and never parks it under the pinned headers.
+  void _revealSelected({bool retried = false}) {
+    if (!mounted || !_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final box = _selectedRowKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached) {
+      // Row not built (far outside the cache extent): jump to an estimated
+      // offset so it gets built, then reveal it precisely next frame.
+      final index = _items.indexWhere((m) => m.id == widget.selectedMessageId);
+      if (retried || index == -1) return;
+      final rowExtent =
+          (position.maxScrollExtent + position.viewportDimension) /
+          _items.length;
+      _scrollController.jumpTo(
+        (index * rowExtent).clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        ),
+      );
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _revealSelected(retried: true),
+      );
+      return;
+    }
+    final viewport = RenderAbstractViewport.of(box);
+    final pinned = _pinnedHeaderExtent(box);
+    final alignTop = viewport.getOffsetToReveal(box, 0).offset - pinned;
+    final alignBottom = viewport.getOffsetToReveal(box, 1).offset;
+    final double target;
+    if (position.pixels > alignTop) {
+      target = alignTop;
+    } else if (position.pixels < alignBottom) {
+      target = alignBottom;
+    } else {
+      return;
+    }
+    _scrollController.animateTo(
+      target.clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+    );
+  }
+
+  /// Height of the pinned search header + toolbar covering the top of the
+  /// mail list's sliver (its `overlap`).
+  static double _pinnedHeaderExtent(RenderObject row) {
+    RenderObject? node = row;
+    while (node != null && node is! RenderSliver) {
+      node = node.parent;
+    }
+    return node is RenderSliver ? node.constraints.overlap : 0;
   }
 
   void _maybeMarkRead(int? id) {
@@ -250,6 +313,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     itemsAsync = itemsAsync.whenData((all) => _withoutHeld(query, all));
     final paging = (hasMore: hasMore, loadingMore: loadingMore);
     final items = itemsAsync.value ?? const <MessageListItem>[];
+    _items = items;
 
     final body = CallbackShortcuts(
       bindings: {
@@ -312,6 +376,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             itemsAsync: itemsAsync,
             searchController: _searchController,
             scrollController: _scrollController,
+            selectedRowKey: _selectedRowKey,
             hasMore: paging.hasMore,
             loadingMore: paging.loadingMore,
             heldCount: _held.length,
@@ -389,6 +454,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         itemsAsync: itemsAsync,
         searchController: _searchController,
         scrollController: _scrollController,
+        selectedRowKey: null,
         hasMore: paging.hasMore,
         loadingMore: paging.loadingMore,
         heldCount: _held.length,
@@ -455,19 +521,12 @@ class _ReadingPane extends ConsumerWidget {
           onBack: () {},
         ),
         const Divider(height: 1),
+        // Swapped instantly, like Mail.app: a cross-fade stacked the old and
+        // new mail on top of each other for a few frames (visible ghosting).
         Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 160),
-            switchInCurve: Curves.easeOut,
-            // Top-aligned (the default Stack centers the mail vertically).
-            layoutBuilder: (current, previous) => Stack(
-              alignment: Alignment.topCenter,
-              children: [...previous, ?current],
-            ),
-            child: MailDetailView(
-              key: ValueKey(selectedMessageId),
-              messageId: selectedMessageId!,
-            ),
+          child: MailDetailView(
+            key: ValueKey(selectedMessageId),
+            messageId: selectedMessageId!,
           ),
         ),
       ],
@@ -552,6 +611,7 @@ class _ListPane extends ConsumerWidget {
     required this.itemsAsync,
     required this.searchController,
     required this.scrollController,
+    required this.selectedRowKey,
     required this.hasMore,
     required this.loadingMore,
     required this.heldCount,
@@ -567,6 +627,7 @@ class _ListPane extends ConsumerWidget {
   final AsyncValue<List<MessageListItem>> itemsAsync;
   final TextEditingController searchController;
   final ScrollController scrollController;
+  final GlobalKey? selectedRowKey;
 
   /// The last page came back full — more rows may load on scroll.
   final bool hasMore;
@@ -651,12 +712,14 @@ class _ListPane extends ConsumerWidget {
                   },
                   itemBuilder: (context, i) {
                     final item = items[i];
+                    final selected = item.id == selectedMessageId;
                     return MailSwipeActions(
                       key: ValueKey<int>(item.id),
                       item: item,
                       child: MailListTile(
+                        key: selected ? selectedRowKey : null,
                         item: item,
-                        selected: item.id == selectedMessageId,
+                        selected: selected,
                         onTap: () => onSelect(item.id),
                         orderedIds: () => [for (final m in items) m.id],
                         tags: tags,

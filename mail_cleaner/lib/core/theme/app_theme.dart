@@ -11,6 +11,10 @@ abstract final class AppTheme {
       defaultTargetPlatform == TargetPlatform.windows ||
       defaultTargetPlatform == TargetPlatform.linux;
 
+  /// Bundled (assets/fonts) so every platform renders the same typeface,
+  /// including Vietnamese diacritics.
+  static const fontFamily = 'Montserrat';
+
   static ThemeData light() => _build(Brightness.light, AppTokens.light);
   static ThemeData dark() => _build(Brightness.dark, AppTokens.dark);
 
@@ -43,6 +47,7 @@ abstract final class AppTheme {
         : Colors.transparent;
 
     return ThemeData(
+      fontFamily: fontFamily,
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
@@ -260,6 +265,7 @@ abstract final class AppTheme {
   static TextTheme _textTheme(bool desktop, Color color) {
     final s = desktop ? 1.0 : 15 / 13;
     TextStyle t(double size, FontWeight w, [double? height]) => TextStyle(
+      fontFamily: fontFamily,
       fontSize: size * s,
       fontWeight: w,
       height: height,
